@@ -9,7 +9,7 @@ import numpy as np
 from pynput import keyboard
 import threading
 
-adaptiveThreshWinSizeMin = 27
+adaptiveThreshWinSizeMin = 7
 adaptiveThreshWinSizeMax = 133
 adaptiveThreshWinSizeStep = 10
 adaptiveThreshConstant = 7
@@ -19,12 +19,6 @@ def on_press(key):
     global adaptiveThreshWinSizeMax
     global adaptiveThreshWinSizeStep
     global adaptiveThreshConstant
-    try:
-        print('alphanumeric key {0} pressed'.format(
-            key.char))
-    except AttributeError:
-        print('special key {0} pressed'.format(
-            key))
     if hasattr(key, 'char'):
         # -----------------------
         # adaptiveThreshWinSizeMin
@@ -66,20 +60,17 @@ def on_press(key):
 
 
 def on_release(key):
-    print('{0} released'.format(key))
+    return
+    #print('{0} released'.format(key))
  
 
 def keyboard_listen():
     with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         listener.join()
 
-# Collect events until released
-
-
-
 def run_opencv():
 
-    device = 1  # Front camera
+    device = 0 # Front camera
     try:
         device = int(sys.argv[1])  # 0 for back camera
     except IndexError:
@@ -90,12 +81,17 @@ def run_opencv():
 
     cv2.startWindowThread()
     cv2.namedWindow("preview")
+    cv2.namedWindow("crop")
 
     while cap.isOpened():
 
         # Capture frame-by-frame
         ret, frame = cap.read()
 
+        width=874
+        height=1240
+
+        cropped = np.zeros((height,width,3), np.uint8)
         #frame[:,:,2] = np.zeros([frame.shape[0], frame.shape[1]])
 
         # Check if frame is not empty
@@ -132,25 +128,49 @@ def run_opencv():
         corners, ids, _ = aruco.detectMarkers(
             frame, aruco_dict, parameters=parameters)
         frame = aruco.drawDetectedMarkers(frame, corners, ids)
-        """
         if len(corners) == 4:
             array = []
             i = 0
             for c in corners:
-                array.append(c[0][3])
-                inner_corner = c[0]
-                print(inner_corner, inner_corner)
+                i+=1
+                center = np.mean(c[0], axis=0)
+                print('center', i, center)
+                center_coordinates = (int(center[0]), int(center[1]))
+                array.append(center_coordinates)
 
-            cnt = np.array(array)
+                _rect = cv2.minAreaRect(c[0])
+                _box = cv2.boxPoints(_rect)
+                _box = np.int0(_box)
+                cv2.drawContours(frame, [_box], 0, (0, 0, 255), 2)
+                
+                cv2.circle(frame, center_coordinates, 10, (255, 0, 255), 2)
 
-            rect = cv2.minAreaRect(cnt)
-            box = cv2.boxPoints(rect)
-            box = np.int0(box)
-            cv2.drawContours(frame, [box], 0, (0, 0, 255), 2)
-        """
+
+            sorted(array , key=lambda k: [k[1], k[0]])
+
+            points = [
+                array[0],
+                array[1],
+                array[3],
+                array[2]
+            ]
+            points = np.int0(points)
+
+
+            # Define corresponding points in output image
+            input_pts = np.float32(points)
+            output_pts = np.float32([[0,0],[width,0],[width,height],[0,height]])
+
+            # Get perspective transform and apply it
+            M = cv2.getPerspectiveTransform(input_pts,output_pts)
+            cropped = cv2.warpPerspective(frame,M,(width,height))
+
+            cv2.polylines(frame, [points], 1, (255, 0, 0), 2)
+        
         # Display the resulting frame
         cv2.imshow('preview', frame)
-        cv2.imshow('mais', threshInv)
+        cv2.imshow('cropped', cropped)
+        #cv2.imshow('mais', threshInv)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
