@@ -9,8 +9,8 @@ import numpy as np
 from pynput import keyboard
 import threading
 
-adaptiveThreshWinSizeMin = 7
-adaptiveThreshWinSizeMax = 133
+adaptiveThreshWinSizeMin = 3
+adaptiveThreshWinSizeMax = 90
 adaptiveThreshWinSizeStep = 10
 adaptiveThreshConstant = 7
 
@@ -70,7 +70,7 @@ def keyboard_listen():
 
 def run_opencv():
 
-    device = 0 # Front camera
+    device = 1 # Front camera
     try:
         device = int(sys.argv[1])  # 0 for back camera
     except IndexError:
@@ -125,48 +125,40 @@ def run_opencv():
         #parameters.maxErroneousBitsInBorderRate = 0.8
 
         #parameters.adaptiveThreshWinSizeMax = 10
-        corners, ids, _ = aruco.detectMarkers(
-            frame, aruco_dict, parameters=parameters)
-        frame = aruco.drawDetectedMarkers(frame, corners, ids)
-        if len(corners) == 4:
-            array = []
-            i = 0
-            for c in corners:
-                i+=1
-                center = np.mean(c[0], axis=0)
-                print('center', i, center)
-                center_coordinates = (int(center[0]), int(center[1]))
-                array.append(center_coordinates)
+        markers_pos, ids, _ = aruco.detectMarkers(frame, aruco_dict, parameters=parameters)
+        frame = aruco.drawDetectedMarkers(frame, markers_pos, ids)
 
-                _rect = cv2.minAreaRect(c[0])
-                _box = cv2.boxPoints(_rect)
-                _box = np.int0(_box)
-                cv2.drawContours(frame, [_box], 0, (0, 0, 255), 2)
-                
-                cv2.circle(frame, center_coordinates, 10, (255, 0, 255), 2)
+        if ids is not None:
+            corner_ids=[[1],[2],[4],[3]]
+            has_all = all(x in ids for x in corner_ids)
 
+            if has_all:
+                #print(corners)
+                corners=[]
+                for corner_id in corner_ids:
+                    item_index=0
+                    for id in ids:
+                        if (id == corner_id):
+                            break
+                        item_index+=1
+                    #print('item_index', markers_pos[item_index])
+                    center = np.mean(markers_pos[item_index][0], axis=0)
+                    center_coordinates = (int(center[0]), int(center[1]))          
+                    corners.append(center_coordinates)
+                    cv2.circle(frame, center_coordinates, 10, (255, 0, 255), 2)
 
-            sorted(array , key=lambda k: [k[1], k[0]])
+                points = np.int0(corners)
 
-            points = [
-                array[0],
-                array[1],
-                array[3],
-                array[2]
-            ]
-            points = np.int0(points)
+                # Define corresponding points in output image
+                input_pts = np.float32(points)
+                output_pts = np.float32([[0,0],[width,0],[width,height],[0,height]])
 
+                # Get perspective transform and apply it
+                M = cv2.getPerspectiveTransform(input_pts,output_pts)
+                cropped = cv2.warpPerspective(frame,M,(width,height))
 
-            # Define corresponding points in output image
-            input_pts = np.float32(points)
-            output_pts = np.float32([[0,0],[width,0],[width,height],[0,height]])
-
-            # Get perspective transform and apply it
-            M = cv2.getPerspectiveTransform(input_pts,output_pts)
-            cropped = cv2.warpPerspective(frame,M,(width,height))
-
-            cv2.polylines(frame, [points], 1, (255, 0, 0), 2)
-        
+                cv2.polylines(frame, [points], 1, (255, 0, 0), 2)
+            
         # Display the resulting frame
         cv2.imshow('preview', frame)
         cv2.imshow('cropped', cropped)
