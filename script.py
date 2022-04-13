@@ -10,7 +10,6 @@ import cv2.aruco as aruco
 import numpy as np
 from pynput import keyboard
 import threading
-import json
 import math
 import socketio
 
@@ -38,15 +37,14 @@ bin_threshold=100
 captureBits=False
 
 json_data=0
-with open('762.json') as json_file:
-    json_data = json.load(json_file)
-print(json_data)
+#with open('762.json') as json_file:
+#    json_data = json.load(json_file)
 
-rows = json_data['rows']
-cols = json_data['cols']
+rows=220 #json_data['rows']
+cols=200 #json_data['cols']
 
-width=json_data['width']*4
-height=json_data['height']*4
+width=297 #json_data['width']*4
+height=420 #json_data['height']*4
 
 def on_press(key):
     global adaptiveThreshWinSizeMin
@@ -133,7 +131,7 @@ def keyboard_listen():
 def run_opencv():
     global captureBits
 
-    device = 1 # Front camera
+    device = 1# Front camera
     try:
         device = int(sys.argv[1])  # 0 for back camera
     except IndexError:
@@ -189,7 +187,7 @@ def run_opencv():
         #parameters.adaptiveThreshWinSizeMax = 10
         
         markers_pos, ids, _ = aruco.detectMarkers(frame, aruco_dict, parameters=parameters)
-        #frame = aruco.drawDetectedMarkers(frame, markers_pos, ids)
+        frame = aruco.drawDetectedMarkers(frame, markers_pos, ids)
 
         if ids is not None:
             corner_ids=[[1],[2],[4],[3]]
