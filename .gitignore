@@ -1,2 +1,4 @@
 *.json
 *.png
+!test.png
+!test.json
