@@ -133,7 +133,7 @@ def keyboard_listen():
 def run_opencv():
     global captureBits
 
-    device = 1 # Front camera
+    device = 0 # Front camera
     try:
         device = int(sys.argv[1])  # 0 for back camera
     except IndexError:
