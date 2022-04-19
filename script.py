@@ -2,6 +2,7 @@
 An example of detecting ArUco markers with OpenCV.
 """
 
+from re import A
 import cv2
 import sys
 
@@ -131,11 +132,7 @@ def keyboard_listen():
 def run_opencv():
     global captureBits
 
-<<<<<<< HEAD
-    device = 0 # Front camera
-=======
-    device = 1# Front camera
->>>>>>> f8ee0c2b4ec0282dc87aca2a25c001ff59be973a
+    device = 1 # Front camera
     try:
         device = int(sys.argv[1])  # 0 for back camera
     except IndexError:
@@ -197,9 +194,9 @@ def run_opencv():
             corner_ids=[[1],[2],[4],[3]]
             has_all = all(x in ids for x in corner_ids)
 
-            if has_all:
-                #print(corners)
+            if has_all and len(ids) >= 8:
                 corners=[]
+                
                 for corner_id in corner_ids:
                     item_index=0
                     for id in ids:
@@ -209,9 +206,18 @@ def run_opencv():
                     center = np.mean(markers_pos[item_index][0], axis=0)
                     center_coordinates = (int(center[0]), int(center[1]))          
                     corners.append(center_coordinates)
-                    #cv2.circle(frame, center_coordinates, 10, (255, 0, 255), 2)
-
+                
                 points = np.int0(corners)
+
+                tl = corners[0]
+                tr = corners[1]
+                bl = corners[2]
+                br = corners[3]
+
+                colMarker = findBetweenMarker(markers_pos, ids, tl, tr)
+                rowsMarker = findBetweenMarker(markers_pos, ids, tr, br)
+                idMarker = findBetweenMarker(markers_pos, ids, bl, br)
+
 
                 # Define corresponding points in output image
                 input_pts = np.float32(points)
@@ -259,6 +265,19 @@ def run_opencv():
     # Destroy all the windows
     cv2.destroyAllWindows()
 
+def findBetweenMarker (markers_pos, ids, a, b):
+    c = np.average(np.array([a, b]), axis=0)
+    idx=0
+    i=0
+    last_val=99999
+    for marker in markers_pos:
+        m = np.mean(marker[0], axis=0)
+        val = dist(m[0], m[1], c[0], c[1])
+        if last_val>val:
+            last_val = val
+            idx=i
+        i+=1
+    return idx
 
 def captureBitsFromImage(img, width, height, rows, cols):
     global margin
@@ -286,11 +305,10 @@ def captureBitsFromImage(img, width, height, rows, cols):
     print(data_y, data_x)
     s = "".join(bin_array)
     numbers = [s[i:i+8] for i in range(0, len(s), 8)]
-    cv2.imshow('data_image', data_image)
+    # cv2.imshow('data_image', data_image)
     bits = map(lambda s: int(s, 2), numbers) 
     bits = map(lambda n: alphabet[n], bits) 
     textSound = "".join(list(bits))
-    print(textSound)
     if socket_connected:
         sendData(textSound)
 
@@ -299,6 +317,9 @@ def sendData (textSound):
         socketClient.emit('textSound', textSound)
     except socketio.exceptions.BadNamespaceError as err:
         print("error sending data", err)
+
+def dist(x1,y1,x2,y2):
+    return ((x2-x1)**2 + (y2-y1)**2)**0.5
 
 thread = threading.Thread(target=keyboard_listen)
 thread.start()

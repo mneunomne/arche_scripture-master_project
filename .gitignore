@@ -2,3 +2,4 @@
 *.png
 !test.png
 !test.json
+*.DS_Store
