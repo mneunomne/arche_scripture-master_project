@@ -4,14 +4,14 @@ import math
 import json
  
 data=0
-with open('762.json') as json_file:
+with open('test.json') as json_file:
   data = json.load(json_file)
 
 interval = 17
 margin=74
 spacing=1
 
-img = cv2.imread('762.png')
+img = cv2.imread('test.png')
 
 alphabet = "撒健億媒間増感察総負街時哭병体封列効你老呆安发は切짜확로감外年와모ゼДが占乜산今もれすRビコたテパアEスどバウПm가бうクん스РりwАêãХйてシжغõ小éजভकöলレ入धबलخFসeवমوযиथशkحくúoनবएদYンदnuনمッьノкتبهtт一ادіاгرزरjvةзنLxっzэTपнлçşčतلイयしяトüषখথhцहیরこñóহリअعसमペيフdォドрごыСいگдとナZকইм三ョ나gшマで시Sقに口س介Иظ뉴そキやズВ자ص兮ض코격ダるなф리Юめき宅お世吃ま来店呼설진음염론波密怪殺第断態閉粛遇罩孽關警"
 

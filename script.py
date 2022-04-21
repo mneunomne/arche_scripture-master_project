@@ -17,14 +17,16 @@ import socketio
 server_path = 'http://localhost:3000' # node server location
 socket_connected = False
 # Connect to socket.io server
-try:
-    socketClient = socketio.Client()
-    socketClient.connect(server_path)
-except socketio.exceptions.ConnectionError as err:
-    socket_connected = False
-    print("Error on socket connection")
-else:
-    socket_connected = True
+
+def connectSocket():
+    try:
+        socketClient = socketio.Client()
+        socketClient.connect(server_path)
+    except socketio.exceptions.ConnectionError as err:
+        socket_connected = False
+        print("Error on socket connection")
+    else:
+        socket_connected = True
 
 alphabet = "撒健億媒間増感察総負街時哭병体封列効你老呆安发は切짜확로감外年와모ゼДが占乜산今もれすRビコたテパアEスどバウПm가бうクん스РりwАêãХйてシжغõ小éजভकöলレ入धबलخFসeवমوযиथशkحくúoनবएদYンदnuনمッьノкتبهtт一ادіاгرزरjvةзنLxっzэTपнлçşčतلイयしяトüषখথhцहیরこñóহリअعसमペيフdォドрごыСいگдとナZকইм三ョ나gшマで시Sقに口س介Иظ뉴そキやズВ자ص兮ض코격ダるなф리Юめき宅お世吃ま来店呼설진음염론波密怪殺第断態閉粛遇罩孽關警"
 
@@ -131,11 +133,8 @@ def keyboard_listen():
 def run_opencv():
     global captureBits
 
-<<<<<<< HEAD
     device = 0 # Front camera
-=======
-    device = 1# Front camera
->>>>>>> f8ee0c2b4ec0282dc87aca2a25c001ff59be973a
+
     try:
         device = int(sys.argv[1])  # 0 for back camera
     except IndexError:
@@ -145,13 +144,13 @@ def run_opencv():
 
     cv2.startWindowThread()
     cv2.namedWindow("preview")
-    cv2.namedWindow("crop")
-    cv2.namedWindow("data")
+    #cv2.namedWindow("crop")
+    #cv2.namedWindow("data")
 
 
     cropped = np.zeros((height,width,3), np.uint8)
     while cap.isOpened():
-
+        print("read cam")
 
         # Capture frame-by-frame
         ret, frame = cap.read()
@@ -167,7 +166,6 @@ def run_opencv():
 
         # Convert from BGR to RGB
         #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         (T, threshInv) = cv2.threshold(gray, adaptiveThreshWinSizeMax, 255, cv2.THRESH_BINARY_INV)
 
@@ -192,11 +190,11 @@ def run_opencv():
         
         markers_pos, ids, _ = aruco.detectMarkers(frame, aruco_dict, parameters=parameters)
         frame = aruco.drawDetectedMarkers(frame, markers_pos, ids)
-
+        print("123123123")
         if ids is not None:
             corner_ids=[[1],[2],[4],[3]]
             has_all = all(x in ids for x in corner_ids)
-
+            print("4444", ids)
             if has_all:
                 #print(corners)
                 corners=[]
@@ -236,23 +234,20 @@ def run_opencv():
 
                     blur = cv2.GaussianBlur(img_grey,(5,5),0)
                     ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-                    print(cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
                     captureBitsFromImage(th3, width, height, rows, cols)
                     captureBits=False
-
         img_grey = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
 
         blur = cv2.GaussianBlur(img_grey,(5,5),0)
         ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         #th3 = cv2.threshold(img_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         # Display the resulting frame
-        cv2.imshow('preview', frame)
-        cv2.imshow('cropped', th3)
+        cv2.imshow('preview', adjusted)
+        #cv2.imshow('cropped', th3)
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #    break
         #cv2.imshow('mais', threshInv)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
 
     # After the loop release the cap object
     cap.release()
