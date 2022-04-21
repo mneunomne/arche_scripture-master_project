@@ -42,7 +42,7 @@ adaptiveThreshWinSizeMin = 3
 adaptiveThreshWinSizeMax = 90
 adaptiveThreshWinSizeStep = 10
 adaptiveThreshConstant = 2
-margin=45
+margin=32
 bin_threshold=100
 captureBits=False
 
@@ -58,6 +58,9 @@ cols=20*7 #json_data['cols']
 
 width=297*2 #json_data['width']*4
 height=420*2 #json_data['height']*4
+
+default_alpha = 1  # Contrast control (1.0-3.0)
+beta = 0  # Brightness control (0-100)
 
 def on_press(key):
     global adaptiveThreshWinSizeMin
@@ -141,10 +144,22 @@ def keyboard_listen():
     with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         listener.join()
 
+def increase_brightness(img, value=30):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    h, s, v = cv2.split(hsv)
+
+    lim = 255 - value
+    v[v > lim] = 255
+    v[v <= lim] += value
+
+    final_hsv = cv2.merge((h, s, v))
+    img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
+    return img
+
 def run_opencv():
     global captureBits
 
-    device = 1 # Front camera
+    device = 2 # Front camera
     try:
         device = int(sys.argv[1])  # 0 for back camera
     except IndexError:
@@ -162,9 +177,11 @@ def run_opencv():
     cv2.namedWindow("data")
 
     # create trackbars for color change
-    # cv2.createTrackbar('lowH','preview',0,179,nothing)
-    # cv2.createTrackbar('highH','preview',179,179,nothing)
-    # cv2.createTrackbar('lowS','preview',0,255,nothing)
+    cv2.createTrackbar('brightness','preview',0,255,nothing)
+    cv2.createTrackbar('alpha','preview',default_alpha,10,nothing)
+    cv2.createTrackbar('beta','preview',0,255,nothing)
+
+    cv2.createTrackbar('margin','preview',margin,100,nothing)
     # cv2.createTrackbar('highS','preview',255,255,nothing)
     # cv2.createTrackbar('lowV','preview',0,255,nothing)
     # cv2.createTrackbar('highV','preview',255,255,nothing)
@@ -174,6 +191,18 @@ def run_opencv():
 
         # Capture frame-by-frame
         ret, frame = cap.read()
+
+        brightness = cv2.getTrackbarPos('brightness', 'preview')
+        alpha = cv2.getTrackbarPos('alpha', 'preview')
+        beta = cv2.getTrackbarPos('beta', 'preview')-5
+
+        #frame = increase_brightness(frame, brightness)
+        frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
+
+        
+        frame[:, :, 0] = 0
+        frame[:, :, 1] = 0
+
 
         detections = frame.copy()
         
@@ -213,10 +242,6 @@ def run_opencv():
 
 
         (T, threshInv) = cv2.threshold(gray, adaptiveThreshWinSizeMax, 255, cv2.THRESH_BINARY_INV)
-
-
-        alpha = 1.5  # Contrast control (1.0-3.0)
-        beta = 0  # Brightness control (0-100)
 
         adjusted = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
 
@@ -293,18 +318,19 @@ def run_opencv():
                     blur = cv2.GaussianBlur(img_grey,(5,5),0)
                     ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-                    captureBitsFromImage(img_grey, width, height, rows, cols)
+                    th3 = captureBitsFromImage(th3, width, height, rows, cols)
+                    cv2.imshow('data', th3)
                     captureBits=False
 
-        img_grey = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
+        #img_grey = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
 
-        blur = cv2.GaussianBlur(img_grey,(5,5),0)
-        ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        #blur = cv2.GaussianBlur(img_grey,(5,5),0)
+        #ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         #th3 = cv2.threshold(img_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         # Display the resulting frame
         cv2.imshow('preview', detections)
-        cv2.imshow('cropped', img_grey)
-        cv2.imshow('data', th3)
+        #cv2.imshow('cropped', img_grey)
+        #cv2.imshow('data', th3)
         #cv2.imshow('mais', threshInv)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -362,10 +388,11 @@ def captureBitsFromImage(img, width, height, rows, cols):
     bits_num = list(map(lambda s: s-127, bits_num))
     bits = map(lambda n: alphabet[n], bits_num)
     graph1.clear()
-    graph1.plot(bits_num)
+    graph1.plot(bits_num, linewidth=0.1)
     textSound = "".join(list(bits))
     if socket_connected:
         sendData(textSound)
+    return img
 
 def getCornersFromIds(corner_ids, ids, markers_pos):
     corners=[]
