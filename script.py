@@ -13,6 +13,15 @@ from pynput import keyboard
 import threading
 import math
 import socketio
+import matplotlib.pyplot as plt
+
+#audio plot
+x = np.linspace(0, 10*np.pi, 100)
+y = np.sin(x)
+plt.ion()
+fig = plt.figure()
+graph1 = fig.add_subplot(111)
+#line1, = ax.plot(x, y, 'b-')
 
 # Socket.io client
 server_path = 'http://localhost:3000' # node server location
@@ -37,15 +46,18 @@ margin=45
 bin_threshold=100
 captureBits=False
 
+low_clay_color = np.array([25, 52, 72])
+high_clay_color = np.array([102, 255, 255])
+
 json_data=0
 #with open('762.json') as json_file:
 #    json_data = json.load(json_file)
 
 rows=220 #json_data['rows']
-cols=200 #json_data['cols']
+cols=20*7 #json_data['cols']
 
-width=297 #json_data['width']*4
-height=420 #json_data['height']*4
+width=297*2 #json_data['width']*4
+height=420*2 #json_data['height']*4
 
 def on_press(key):
     global adaptiveThreshWinSizeMin
@@ -140,18 +152,30 @@ def run_opencv():
 
     cap = cv2.VideoCapture(device)
 
+     
+    def nothing(x):
+        pass
+
     cv2.startWindowThread()
     cv2.namedWindow("preview")
     cv2.namedWindow("crop")
     cv2.namedWindow("data")
 
+    # create trackbars for color change
+    # cv2.createTrackbar('lowH','preview',0,179,nothing)
+    # cv2.createTrackbar('highH','preview',179,179,nothing)
+    # cv2.createTrackbar('lowS','preview',0,255,nothing)
+    # cv2.createTrackbar('highS','preview',255,255,nothing)
+    # cv2.createTrackbar('lowV','preview',0,255,nothing)
+    # cv2.createTrackbar('highV','preview',255,255,nothing)
 
     cropped = np.zeros((height,width,3), np.uint8)
     while cap.isOpened():
 
-
         # Capture frame-by-frame
         ret, frame = cap.read()
+
+        detections = frame.copy()
         
         #frame[:,:,2] = np.zeros([frame.shape[0], frame.shape[1]])
 
@@ -164,8 +188,30 @@ def run_opencv():
 
         # Convert from BGR to RGB
         #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    
+        # get current positions of the trackbars
+        # ilowH = cv2.getTrackbarPos('lowH', 'preview')
+        # ihighH = cv2.getTrackbarPos('highH', 'preview')
+        # ilowS = cv2.getTrackbarPos('lowS', 'preview')
+        # ihighS = cv2.getTrackbarPos('highS', 'preview')
+        # ilowV = cv2.getTrackbarPos('lowV', 'preview')
+        # ihighV = cv2.getTrackbarPos('highV', 'preview')
+        # frame = cv2.GaussianBlur(frame,(5,5),0)
+        # convert color to hsv because it is easy to track colors in this color model
+        #hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        #lower_hsv = np.array([ilowH, ilowS, ilowV])
+        #higher_hsv = np.array([ihighH, ihighS, ihighV])
+        # Apply the cv2.inrange method to create a mask
+        #mask = cv2.inRange(hsv, lower_hsv, higher_hsv)
+        # Apply the mask on the image to extract the original colorbs
+        #frame = cv2.bitwise_and(frame, frame, mask=mask)
+        #cv2.imshow('image', frame)
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        
+        #frame = cv2.bitwise_and(frame,frame, mask=mask)
+
+
         (T, threshInv) = cv2.threshold(gray, adaptiveThreshWinSizeMax, 255, cv2.THRESH_BINARY_INV)
 
 
@@ -188,36 +234,37 @@ def run_opencv():
         #parameters.adaptiveThreshWinSizeMax = 10
         
         markers_pos, ids, _ = aruco.detectMarkers(frame, aruco_dict, parameters=parameters)
-        frame = aruco.drawDetectedMarkers(frame, markers_pos, ids)
+        detections = aruco.drawDetectedMarkers(detections, markers_pos, ids)
 
         if ids is not None:
+            # order of fiducial id's
             corner_ids=[[1],[2],[4],[3]]
+            # check if image has all id's
             has_all = all(x in ids for x in corner_ids)
-
-            if has_all and len(ids) >= 8:
-                corners=[]
-                
-                for corner_id in corner_ids:
-                    item_index=0
-                    for id in ids:
-                        if (id == corner_id):
-                            break
-                        item_index+=1
-                    center = np.mean(markers_pos[item_index][0], axis=0)
-                    center_coordinates = (int(center[0]), int(center[1]))          
-                    corners.append(center_coordinates)
-                
+            # if it has all ids... 
+            if has_all and len(ids) >= 4:
+                # get corner positions from ids
+                corners=getCornersFromIds(corner_ids, ids, markers_pos)
+                # make point array to construct rect
                 points = np.int0(corners)
 
-                tl = corners[0]
-                tr = corners[1]
-                bl = corners[2]
-                br = corners[3]
+                eight_points = None
+                # get the rest of the markers
+                if len(ids) >= 8:
+                    tl = corners[0]
+                    tr = corners[1]
+                    bl = corners[3]
+                    br = corners[2]
 
-                colMarker = findBetweenMarker(markers_pos, ids, tl, tr)
-                rowsMarker = findBetweenMarker(markers_pos, ids, tr, br)
-                idMarker = findBetweenMarker(markers_pos, ids, bl, br)
+                    cols = findBetweenMarker(markers_pos, ids, tl, tr, corner_ids)[0]
+                    rows = findBetweenMarker(markers_pos, ids, tr, br, corner_ids)[0]
+                    plate_id = findBetweenMarker(markers_pos, ids, bl, br, corner_ids)[0]
+                    fontSize = findBetweenMarker(markers_pos, ids, tl, bl, corner_ids)[0]
 
+                    ## Here is to try to use the other markers to do the corner...
+                    corner_ids = [[1], [cols], [2], [rows],[4], [plate_id],[3], [fontSize]]
+                    corners=getCornersFromIds(corner_ids, ids, markers_pos)
+                    eight_points = np.int0(corners)
 
                 # Define corresponding points in output image
                 input_pts = np.float32(points)
@@ -234,7 +281,10 @@ def run_opencv():
                 #cropped = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
                 #(T, cropped) = cv2.threshold(cropped, adaptiveThreshWinSizeMax, 255, cv2.THRESH_BINARY_INV)
 
-                cv2.polylines(frame, [points], 1, (255, 0, 0), 2)
+                if eight_points is not None:
+                    cv2.polylines(detections, [eight_points], 1, (255, 0, 0), 2)
+                else:
+                    cv2.polylines(detections, [points], 1, (255, 0, 0), 2)
             
                 if captureBits == True or True:
 
@@ -242,9 +292,8 @@ def run_opencv():
 
                     blur = cv2.GaussianBlur(img_grey,(5,5),0)
                     ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-                    print(cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-                    captureBitsFromImage(th3, width, height, rows, cols)
+                    captureBitsFromImage(img_grey, width, height, rows, cols)
                     captureBits=False
 
         img_grey = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
@@ -253,8 +302,9 @@ def run_opencv():
         ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         #th3 = cv2.threshold(img_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         # Display the resulting frame
-        cv2.imshow('preview', frame)
-        cv2.imshow('cropped', th3)
+        cv2.imshow('preview', detections)
+        cv2.imshow('cropped', img_grey)
+        cv2.imshow('data', th3)
         #cv2.imshow('mais', threshInv)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -265,19 +315,22 @@ def run_opencv():
     # Destroy all the windows
     cv2.destroyAllWindows()
 
-def findBetweenMarker (markers_pos, ids, a, b):
+def findBetweenMarker (markers_pos, ids, a, b, corner_ids):
     c = np.average(np.array([a, b]), axis=0)
     idx=0
     i=0
     last_val=99999
     for marker in markers_pos:
+        if ids[i] in corner_ids:
+            i+=1
+            continue
         m = np.mean(marker[0], axis=0)
         val = dist(m[0], m[1], c[0], c[1])
         if last_val>val:
             last_val = val
             idx=i
         i+=1
-    return idx
+    return ids[idx]
 
 def captureBitsFromImage(img, width, height, rows, cols):
     global margin
@@ -285,7 +338,6 @@ def captureBitsFromImage(img, width, height, rows, cols):
     interval = (width-margin*2)/(cols)
     array_x = np.arange(margin+interval/2, width-margin, interval)
     array_y = np.arange(margin+interval/2, height-margin, interval)
-    print("len", len(array_x))
     bin_array = [] 
     data_y = 0
     for pos_y in array_y:
@@ -295,22 +347,38 @@ def captureBitsFromImage(img, width, height, rows, cols):
             cv2.circle(img, [int(pos_x), int(pos_y)], 1, (255, 0, 255), 1)
             bin = '1' if k < bin_threshold else '0'
             bin_array.append(bin)
-            #data_image[data_y, data_x]=k
             start_point=(int(data_x*4), int(data_y*4))
             end_point=(int(data_x*4+4), int(data_y*4+4))
             color = 255 if k > bin_threshold else 0
             data_image = cv2.rectangle(data_image, start_point, end_point, (color), -1)
             data_x+=1
         data_y+=1
-    print(data_y, data_x)
+    
     s = "".join(bin_array)
     numbers = [s[i:i+8] for i in range(0, len(s), 8)]
+    
     # cv2.imshow('data_image', data_image)
-    bits = map(lambda s: int(s, 2), numbers) 
-    bits = map(lambda n: alphabet[n], bits) 
+    bits_num = list(map(lambda s: int(s, 2), numbers))
+    bits_num = list(map(lambda s: s-127, bits_num))
+    bits = map(lambda n: alphabet[n], bits_num)
+    graph1.clear()
+    graph1.plot(bits_num)
     textSound = "".join(list(bits))
     if socket_connected:
         sendData(textSound)
+
+def getCornersFromIds(corner_ids, ids, markers_pos):
+    corners=[]
+    for corner_id in corner_ids:
+        item_index=0
+        for id in ids:
+            if (id == corner_id):
+                break
+            item_index+=1
+        center = np.mean(markers_pos[item_index][0], axis=0)
+        center_coordinates = (int(center[0]), int(center[1]))          
+        corners.append(center_coordinates)
+    return corners
 
 def sendData (textSound):
     try:
