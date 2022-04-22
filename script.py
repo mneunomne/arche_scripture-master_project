@@ -51,10 +51,9 @@ high_clay_color = np.array([102, 255, 255])
 
 json_data=0
 #with open('762.json') as json_file:
-#    json_data = json.load(json_file)
-
+#    json_data = json.load(json_fil
 rows=220 #json_data['rows']
-cols=20*7 #json_data['cols']
+cols=20*7 #json_data['cols']e)
 
 width=297*2 #json_data['width']*4
 height=420*2 #json_data['height']*4
@@ -157,6 +156,9 @@ def increase_brightness(img, value=30):
     return img
 
 def run_opencv():
+    global rows
+    global cols
+
     global captureBits
 
     device = 2 # Front camera
