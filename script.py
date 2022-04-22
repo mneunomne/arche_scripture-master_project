@@ -20,6 +20,7 @@ x = np.linspace(0, 10*np.pi, 100)
 y = np.sin(x)
 plt.ion()
 fig = plt.figure()
+plt.style.use('dark_background')
 graph1 = fig.add_subplot(111)
 #line1, = ax.plot(x, y, 'b-')
 
@@ -161,7 +162,7 @@ def run_opencv():
 
     global captureBits
 
-    device = 2 # Front camera
+    device = 1 # Front camera
     try:
         device = int(sys.argv[1])  # 0 for back camera
     except IndexError:
@@ -182,7 +183,6 @@ def run_opencv():
     cv2.createTrackbar('brightness','preview',0,255,nothing)
     cv2.createTrackbar('alpha','preview',default_alpha,10,nothing)
     cv2.createTrackbar('beta','preview',0,255,nothing)
-
     cv2.createTrackbar('margin','preview',margin,100,nothing)
     # cv2.createTrackbar('highS','preview',255,255,nothing)
     # cv2.createTrackbar('lowV','preview',0,255,nothing)
@@ -201,12 +201,12 @@ def run_opencv():
         #frame = increase_brightness(frame, brightness)
         frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
 
+        detections = frame.copy()
         
         frame[:, :, 0] = 0
         frame[:, :, 1] = 0
 
 
-        detections = frame.copy()
         
         #frame[:,:,2] = np.zeros([frame.shape[0], frame.shape[1]])
 
@@ -372,7 +372,7 @@ def captureBitsFromImage(img, width, height, rows, cols):
         data_x=0
         for pos_x in array_x:
             k = img[math.floor(pos_y), math.floor(pos_x)]
-            cv2.circle(img, [int(pos_x), int(pos_y)], 1, (255, 0, 255), 1)
+            #cv2.circle(img, [int(pos_x), int(pos_y)], 1, (255, 0, 255), 1)
             bin = '1' if k < bin_threshold else '0'
             bin_array.append(bin)
             start_point=(int(data_x*4), int(data_y*4))
