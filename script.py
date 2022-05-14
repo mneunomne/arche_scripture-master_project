@@ -144,8 +144,6 @@ def run_opencv():
 
     cv2.startWindowThread()
     cv2.namedWindow("preview")
-    #cv2.namedWindow("crop")
-    #cv2.namedWindow("data")
 
 
     cropped = np.zeros((height,width,3), np.uint8)
@@ -190,7 +188,6 @@ def run_opencv():
         
         markers_pos, ids, _ = aruco.detectMarkers(frame, aruco_dict, parameters=parameters)
         frame = aruco.drawDetectedMarkers(frame, markers_pos, ids)
-        print("123123123")
         if ids is not None:
             corner_ids=[[1],[2],[4],[3]]
             has_all = all(x in ids for x in corner_ids)
@@ -245,8 +242,8 @@ def run_opencv():
         # Display the resulting frame
         cv2.imshow('preview', adjusted)
         #cv2.imshow('cropped', th3)
-        #if cv2.waitKey(1) & 0xFF == ord('q'):
-        #    break
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
         #cv2.imshow('mais', threshInv)
 
     # After the loop release the cap object
