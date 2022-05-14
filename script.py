@@ -2,6 +2,8 @@
 An example of detecting ArUco markers with OpenCV.
 """
 
+from dotenv import load_dotenv
+
 from re import A
 import cv2
 import sys
@@ -14,6 +16,9 @@ import threading
 import math
 import socketio
 import matplotlib.pyplot as plt
+
+#load envs
+load_dotenv()
 
 #audio plot
 x = np.linspace(0, 10*np.pi, 100)
