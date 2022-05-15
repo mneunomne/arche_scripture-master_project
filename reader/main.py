@@ -1,7 +1,7 @@
 """
 An example of detecting ArUco markers with OpenCV.
 """
-
+import os
 import cv2
 import sys
 
@@ -14,7 +14,12 @@ from socket_connection import connectSocket, sendData, is_connected
 
 load_dotenv()
 
-connectSocket()
+DEVICE = int(os.environ.get("WEBCAM"))
+SOCKET_SERVER_URL = os.environ.get("SOCKET_SERVER_URL")
+
+connectSocket(SOCKET_SERVER_URL)
+
+# default values
 
 adaptiveThreshWinSizeMin = 3
 adaptiveThreshWinSizeMax = 90
@@ -24,52 +29,38 @@ margin=45
 bin_threshold=100
 captureBits=False
 
-
-# default data?
-
 rows=220
 cols=200
-
 width=297
 height=420
 
 def run_opencv():
     global captureBits
 
-    device = 0 # Front camera
+    cap = cv2.VideoCapture(DEVICE)
 
-    try:
-        device = int(sys.argv[1])  # 0 for back camera
-    except IndexError:
-        pass
-
-    cap = cv2.VideoCapture(device)
-
+    # create window
     cv2.startWindowThread()
     cv2.namedWindow("preview")
+    cv2.namedWindow("controls")
 
 
     cropped = np.zeros((height,width,3), np.uint8)
     while cap.isOpened():
-        print("read cam")
-
         # Capture frame-by-frame
         ret, frame = cap.read()
         
-        #frame[:,:,2] = np.zeros([frame.shape[0], frame.shape[1]])
+        # create empty image (do I still need this? )
+        # frame[:,:,2] = np.zeros([frame.shape[0], frame.shape[1]])
 
         # Check if frame is not empty
         if not ret:
             continue
 
-        # Auto rotate camera
-        # frame = cv2.autorotate(frame, device)
-
         # Convert from BGR to RGB
         #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         (T, threshInv) = cv2.threshold(gray, adaptiveThreshWinSizeMax, 255, cv2.THRESH_BINARY_INV)
-
 
         alpha = 1.5  # Contrast control (1.0-3.0)
         beta = 0  # Brightness control (0-100)
@@ -118,35 +109,26 @@ def run_opencv():
                 M = cv2.getPerspectiveTransform(input_pts,output_pts)
                 cropped = cv2.warpPerspective(frame,M,(width,height))
 
-                # alpha = 1  # Contrast control (1.0-3.0)
-                # beta = 0  # Brightness control (0-100)
-                # cropped = cv2.convertScaleAbs(cropped, alpha=alpha, beta=beta)
-                
-                #cropped = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
-                #(T, cropped) = cv2.threshold(cropped, adaptiveThreshWinSizeMax, 255, cv2.THRESH_BINARY_INV)
-
                 cv2.polylines(frame, [points], 1, (255, 0, 0), 2)
             
                 if captureBits == True or True:
-
                     img_grey = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
-
                     blur = cv2.GaussianBlur(img_grey,(5,5),0)
                     ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-
                     captureBitsFromImage(th3, width, height, rows, cols)
                     captureBits=False
+
         img_grey = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
 
         blur = cv2.GaussianBlur(img_grey,(5,5),0)
         ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-        #th3 = cv2.threshold(img_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        # th3 = cv2.threshold(img_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        
         # Display the resulting frame
         cv2.imshow('preview', adjusted)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        #cv2.imshow('mais', threshInv)
-
+        
     # After the loop release the cap object
     cap.release()
     # Destroy all the windows

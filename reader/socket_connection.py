@@ -1,10 +1,9 @@
 import socketio
 
 global socketClient
-server_path = 'http://localhost:3000' # node server location
 is_connected = False
 
-def connectSocket():
+def connectSocket(server_path):
     try:
         socketClient = socketio.Client()
         socketClient.connect(server_path)
