@@ -8,22 +8,13 @@ import sys
 from cv2 import threshold
 import cv2.aruco as aruco
 import numpy as np
-from pynput import keyboard
-import threading
 import math
-import socketio
 from dotenv import load_dotenv
-
-from socket_connection import connectSocket, sendData
-
-# Socket.io client
-server_path = 'http://localhost:3000' # node server location
-socket_connected = False
-# Connect to socket.io server
+from socket_connection import connectSocket, sendData, is_connected
 
 load_dotenv()
 
-alphabet = "撒健億媒間増感察総負街時哭병体封列効你老呆安发は切짜확로감外年와모ゼДが占乜산今もれすRビコたテパアEスどバウПm가бうクん스РりwАêãХйてシжغõ小éजভकöলレ入धबलخFসeवমوযиथशkحくúoनবएদYンदnuনمッьノкتبهtт一ادіاгرزरjvةзنLxっzэTपнлçşčतلイयしяトüषখথhцहیরこñóহリअعसमペيフdォドрごыСいگдとナZকইм三ョ나gшマで시Sقに口س介Иظ뉴そキやズВ자ص兮ض코격ダるなф리Юめき宅お世吃ま来店呼설진음염론波密怪殺第断態閉粛遇罩孽關警"
+connectSocket()
 
 adaptiveThreshWinSizeMin = 3
 adaptiveThreshWinSizeMax = 90
@@ -33,96 +24,14 @@ margin=45
 bin_threshold=100
 captureBits=False
 
-json_data=0
-#with open('762.json') as json_file:
-#    json_data = json.load(json_file)
 
-rows=220 #json_data['rows']
-cols=200 #json_data['cols']
+# default data?
 
-width=297 #json_data['width']*4
-height=420 #json_data['height']*4
+rows=220
+cols=200
 
-def on_press(key):
-    global adaptiveThreshWinSizeMin
-    global adaptiveThreshWinSizeMax
-    global adaptiveThreshWinSizeStep
-    global adaptiveThreshConstant
-    global captureBits
-    global bin_threshold
-    global margin
-    if key == keyboard.Key.space:
-        print("SPACE")
-        captureBits=True
-    if hasattr(key, 'char'):
-        # -----------------------
-        # adaptiveThreshWinSizeMin
-        # -----------------------
-        if key.char == 'a':
-            adaptiveThreshWinSizeMin = adaptiveThreshWinSizeMin+1
-            print("adaptiveThreshWinSizeMin", adaptiveThreshWinSizeMin)
-        if key.char == 'A':
-            if adaptiveThreshWinSizeMin > 3:
-                adaptiveThreshWinSizeMin = adaptiveThreshWinSizeMin-1
-                print("adaptiveThreshWinSizeMin", adaptiveThreshWinSizeMin)
-        # -----------------------
-        # adaptiveThreshWinSizeMin
-        # -----------------------
-        if key.char == 's':
-            adaptiveThreshWinSizeStep = adaptiveThreshWinSizeStep+1
-            print("adaptiveThreshWinSizeStep", adaptiveThreshWinSizeStep)
-        if key.char == 'S':
-            adaptiveThreshWinSizeStep = adaptiveThreshWinSizeStep-1
-            print("adaptiveThreshWinSizeStep", adaptiveThreshWinSizeStep)
-        # -----------------------
-        # adaptiveThreshWinSizeStep
-        # -----------------------
-        if key.char == 'd':
-            adaptiveThreshWinSizeMax = adaptiveThreshWinSizeMax+1
-            print("adaptiveThreshWinSizeMax", adaptiveThreshWinSizeMax)
-        if key.char == 'D':
-            adaptiveThreshWinSizeMax = adaptiveThreshWinSizeMax-1
-            print("adaptiveThreshWinSizeMax", adaptiveThreshWinSizeMax)
-        # -----------------------
-        # adaptiveThreshWinSizeStep
-        # -----------------------
-        if key.char == 'c':
-            adaptiveThreshConstant = adaptiveThreshConstant+1
-            print("adaptiveThreshConstant", adaptiveThreshConstant)
-        if key.char == 'C':
-            adaptiveThreshConstant = adaptiveThreshConstant-1
-            print("adaptiveThreshConstant", adaptiveThreshConstant)
-        # -----------------------
-        # Margin
-        # -----------------------
-        if key.char == 'm':
-            margin = margin+1
-            print("margin", margin)
-        if key.char == 'M':
-            margin = margin-1
-            print("margin", margin)
-        # -----------------------
-        # THRESHOLD
-        # -----------------------
-        if key.char == 't':
-            bin_threshold = bin_threshold+1
-            print("bin_threshold", bin_threshold)
-        if key.char == 'T':
-            margin = margin-1
-            bin_threshold = bin_threshold-1
-            print("bin_threshold", bin_threshold)
-
-def on_release(key):
-    global captureBits
-    if key == keyboard.Key.space:
-        captureBits=False
-    return
-    #print('{0} released'.format(key))
- 
-
-def keyboard_listen():
-    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-        listener.join()
+width=297
+height=420
 
 def run_opencv():
     global captureBits
@@ -185,7 +94,6 @@ def run_opencv():
         if ids is not None:
             corner_ids=[[1],[2],[4],[3]]
             has_all = all(x in ids for x in corner_ids)
-            print("4444", ids)
             if has_all:
                 #print(corners)
                 corners=[]
@@ -235,7 +143,6 @@ def run_opencv():
         #th3 = cv2.threshold(img_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         # Display the resulting frame
         cv2.imshow('preview', adjusted)
-        #cv2.imshow('cropped', th3)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         #cv2.imshow('mais', threshInv)
@@ -277,11 +184,7 @@ def captureBitsFromImage(img, width, height, rows, cols):
     bits = map(lambda n: alphabet[n], bits) 
     textSound = "".join(list(bits))
     print(textSound)
-    if socket_connected:
+    if is_connected:
         sendData(textSound)
-
-thread = threading.Thread(target=keyboard_listen)
-thread.start()
-#thread.join()
 
 run_opencv()
