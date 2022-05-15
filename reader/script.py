@@ -12,21 +12,16 @@ from pynput import keyboard
 import threading
 import math
 import socketio
+from dotenv import load_dotenv
+
+from socket_connection import connectSocket, sendData
 
 # Socket.io client
 server_path = 'http://localhost:3000' # node server location
 socket_connected = False
 # Connect to socket.io server
 
-def connectSocket():
-    try:
-        socketClient = socketio.Client()
-        socketClient.connect(server_path)
-    except socketio.exceptions.ConnectionError as err:
-        socket_connected = False
-        print("Error on socket connection")
-    else:
-        socket_connected = True
+load_dotenv()
 
 alphabet = "撒健億媒間増感察総負街時哭병体封列効你老呆安发は切짜확로감外年와모ゼДが占乜산今もれすRビコたテパアEスどバウПm가бうクん스РりwАêãХйてシжغõ小éजভकöলレ入धबलخFসeवমوযиथशkحくúoनবएদYンदnuনمッьノкتبهtт一ادіاгرزरjvةзنLxっzэTपнлçşčतلイयしяトüषখথhцहیরこñóহリअعसमペيフdォドрごыСいگдとナZকইм三ョ나gшマで시Sقに口س介Иظ뉴そキやズВ자ص兮ض코격ダるなф리Юめき宅お世吃ま来店呼설진음염론波密怪殺第断態閉粛遇罩孽關警"
 
@@ -116,7 +111,6 @@ def on_press(key):
             margin = margin-1
             bin_threshold = bin_threshold-1
             print("bin_threshold", bin_threshold)
-
 
 def on_release(key):
     global captureBits
@@ -285,12 +279,6 @@ def captureBitsFromImage(img, width, height, rows, cols):
     print(textSound)
     if socket_connected:
         sendData(textSound)
-
-def sendData (textSound):
-    try:
-        socketClient.emit('textSound', textSound)
-    except socketio.exceptions.BadNamespaceError as err:
-        print("error sending data", err)
 
 thread = threading.Thread(target=keyboard_listen)
 thread.start()
