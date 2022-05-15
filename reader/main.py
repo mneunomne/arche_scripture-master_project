@@ -34,8 +34,8 @@ beta = 0  # Brightness control (0-100)
 
 rows=220
 cols=200
-width=297
-height=420
+width=297*5
+height=420*5
 
 def nothing(a):
     return None
@@ -56,10 +56,12 @@ def run_opencv():
     global captureBits
     global rows
     global cols
+    global plate_id
     global adaptiveThreshWinSizeMin
     global adaptiveThreshWinSizeMax
     global adaptiveThreshWinSizeStep
     global adaptiveThreshConstant
+    global margin
 
     cap = cv2.VideoCapture(DEVICE)
 
@@ -72,7 +74,7 @@ def run_opencv():
     cv2.createTrackbar('brightness','debug',0,255,nothing)
     cv2.createTrackbar('alpha','debug',default_alpha*10,100,nothing)
     cv2.createTrackbar('beta','debug',0,255,nothing)
-    #cv2.createTrackbar('margin','debug',margin,100,nothing)
+    cv2.createTrackbar('margin','debug',margin,100,nothing)
     # fiducial values
     cv2.createTrackbar('adaptiveThreshWinSizeMin', 'debug', adaptiveThreshWinSizeMin, 100, nothing)
     cv2.createTrackbar('adaptiveThreshWinSizeMax', 'debug', adaptiveThreshWinSizeMax, 100, nothing)
@@ -91,6 +93,7 @@ def run_opencv():
         brightness = cv2.getTrackbarPos('brightness', 'debug')
         alpha = cv2.getTrackbarPos('alpha', 'debug')/10
         beta = cv2.getTrackbarPos('beta', 'debug')-5
+        margin = cv2.getTrackbarPos('margin', 'debug')
 
         adaptiveThreshWinSizeMin = cv2.getTrackbarPos('adaptiveThreshWinSizeMin', 'debug')
         adaptiveThreshWinSizeMax = cv2.getTrackbarPos('adaptiveThreshWinSizeMax', 'debug')
@@ -171,7 +174,7 @@ def run_opencv():
                 # beta = 0  # Brightness control (0-100)
                 #cropped = cv2.convertScaleAbs(cropped, alpha=alpha, beta=beta)
                 
-                #cropped = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
+                cropped = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
                 #(T, cropped) = cv2.threshold(cropped, adaptiveThreshWinSizeMax, 255, cv2.THRESH_BINARY_INV)
 
                 if eight_points is not None:
@@ -182,9 +185,9 @@ def run_opencv():
                 if captureBits == True or True:
 
                     blur = cv2.GaussianBlur(cropped,(5,5),0)
-                    ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+                    ret3,cropped = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-                    th3 = captureBitsFromImage(th3, width, height, rows, cols)
+                    data_img = captureBitsFromImage(cropped, width, height, rows, cols)
                     #cv2.imshow('data', th3)
                     captureBits=False
 
@@ -203,7 +206,10 @@ def run_opencv():
             "adaptiveThreshWinSizeMin": adaptiveThreshWinSizeMin,
             "adaptiveThreshWinSizeMax": adaptiveThreshWinSizeMax,
             "adaptiveThreshWinSizeStep": adaptiveThreshWinSizeStep,
-            "adaptiveThreshConstant": adaptiveThreshConstant
+            "adaptiveThreshConstant": adaptiveThreshConstant,
+            "cols": cols,
+            "rows": rows,
+            "plate_id": plate_id
         }
         debugValue(params, debug_frame)
 
@@ -240,7 +246,7 @@ def captureBitsFromImage(img, width, height, rows, cols):
         data_x=0
         for pos_x in array_x:
             k = img[math.floor(pos_y), math.floor(pos_x)]
-            cv2.circle(img, [int(pos_x), int(pos_y)], 1, (255, 0, 255), 1)
+            #cv2.circle(img, [int(pos_x), int(pos_y)], 1, (255, 0, 255), 1)
             bin = '1' if k < bin_threshold else '0'
             bin_array.append(bin)
             #data_image[data_y, data_x]=k
