@@ -54,47 +54,61 @@ def increase_brightness(img, value=30):
 
 def run_opencv():
     global captureBits
+    global rows
+    global cols
+    global adaptiveThreshWinSizeMin
+    global adaptiveThreshWinSizeMax
+    global adaptiveThreshWinSizeStep
+    global adaptiveThreshConstant
 
     cap = cv2.VideoCapture(DEVICE)
 
     # create window
     cv2.startWindowThread()
-    cv2.namedWindow("preview")
+    cv2.namedWindow("debug")
+    cv2.namedWindow("cropped")
+    cv2.namedWindow("data")
 
-    cv2.createTrackbar('brightness','preview',0,255,nothing)
-    cv2.createTrackbar('alpha','preview',default_alpha*10,100,nothing)
-    cv2.createTrackbar('beta','preview',0,255,nothing)
-    cv2.createTrackbar('margin','preview',margin,100,nothing)
+    cv2.createTrackbar('brightness','debug',0,255,nothing)
+    cv2.createTrackbar('alpha','debug',default_alpha*10,100,nothing)
+    cv2.createTrackbar('beta','debug',0,255,nothing)
+    #cv2.createTrackbar('margin','debug',margin,100,nothing)
     # fiducial values
-    cv2.createTrackbar('adaptiveThreshWinSizeMin', 'preview', adaptiveThreshWinSizeMin, 100, nothing)
-    cv2.createTrackbar('adaptiveThreshWinSizeMax', 'preview', adaptiveThreshWinSizeMax, 100, nothing)
-    cv2.createTrackbar('adaptiveThreshWinSizeStep', 'preview', adaptiveThreshWinSizeStep, 100, nothing)
-    cv2.createTrackbar('adaptiveThreshConstant', 'preview', adaptiveThreshConstant, 100, nothing)
+    cv2.createTrackbar('adaptiveThreshWinSizeMin', 'debug', adaptiveThreshWinSizeMin, 100, nothing)
+    cv2.createTrackbar('adaptiveThreshWinSizeMax', 'debug', adaptiveThreshWinSizeMax, 100, nothing)
+    cv2.createTrackbar('adaptiveThreshWinSizeStep', 'debug', adaptiveThreshWinSizeStep, 100, nothing)
+    cv2.createTrackbar('adaptiveThreshConstant', 'debug', adaptiveThreshConstant, 100, nothing)
 
 
     cropped = np.zeros((height,width,3), np.uint8)
     while cap.isOpened():
         # Capture frame-by-frame
         ret, frame = cap.read()
-        
-        brightness = cv2.getTrackbarPos('brightness', 'preview')
-        alpha = cv2.getTrackbarPos('alpha', 'preview')/10
-        beta = cv2.getTrackbarPos('beta', 'preview')-5
-
-        brightness = cv2.getTrackbarPos('brightness', 'preview')
-
-
-        detections = frame.copy()
-
-        # only use red channel
-        frame[:, :, 0] = np.zeros([frame.shape[0], frame.shape[1]])
-        frame[:, :, 1] = np.zeros([frame.shape[0], frame.shape[1]])
-
-        frame = increase_brightness(frame, brightness)
-        frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
         # Check if frame is not empty
         if not ret:
             continue
+        
+        brightness = cv2.getTrackbarPos('brightness', 'debug')
+        alpha = cv2.getTrackbarPos('alpha', 'debug')/10
+        beta = cv2.getTrackbarPos('beta', 'debug')-5
+
+        adaptiveThreshWinSizeMin = cv2.getTrackbarPos('adaptiveThreshWinSizeMin', 'debug')
+        adaptiveThreshWinSizeMax = cv2.getTrackbarPos('adaptiveThreshWinSizeMax', 'debug')
+        adaptiveThreshWinSizeStep = cv2.getTrackbarPos('adaptiveThreshWinSizeStep', 'debug')
+        adaptiveThreshConstant = cv2.getTrackbarPos('adaptiveThreshConstant', 'debug')
+
+        # image used for interpretation
+        reading_frame = frame.copy()
+
+        # only use red channel
+        reading_frame[:, :, 0] = np.zeros([reading_frame.shape[0], reading_frame.shape[1]])
+        reading_frame[:, :, 1] = np.zeros([reading_frame.shape[0], reading_frame.shape[1]])
+
+        reading_frame = increase_brightness(reading_frame, brightness)
+        reading_frame = cv2.convertScaleAbs(reading_frame, alpha=alpha, beta=beta)
+        
+        # image to used on debug interface
+        debug_frame = reading_frame.copy()
         
         # (some extra unused convertions)
         # Convert from BGR to RGB
@@ -111,10 +125,9 @@ def run_opencv():
         parameters.adaptiveThreshConstant = adaptiveThreshConstant
 
         # detect fiducials
-        markers_pos, ids, _ = aruco.detectMarkers(frame, aruco_dict, parameters=parameters)
-        
+        markers_pos, ids, _ = aruco.detectMarkers(reading_frame, aruco_dict, parameters=parameters)
         # draw detected markers on the captured image
-        frame = aruco.drawDetectedMarkers(frame, markers_pos, ids)
+        debug_frame = aruco.drawDetectedMarkers(debug_frame, markers_pos, ids)
 
         if ids is not None:
             # order of fiducial id's
@@ -152,25 +165,23 @@ def run_opencv():
 
                 # Get perspective transform and apply it
                 M = cv2.getPerspectiveTransform(input_pts,output_pts)
-                cropped = cv2.warpPerspective(frame,M,(width,height))
+                cropped = cv2.warpPerspective(reading_frame,M,(width,height))
 
                 # alpha = 1  # Contrast control (1.0-3.0)
                 # beta = 0  # Brightness control (0-100)
-                # cropped = cv2.convertScaleAbs(cropped, alpha=alpha, beta=beta)
+                #cropped = cv2.convertScaleAbs(cropped, alpha=alpha, beta=beta)
                 
                 #cropped = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
                 #(T, cropped) = cv2.threshold(cropped, adaptiveThreshWinSizeMax, 255, cv2.THRESH_BINARY_INV)
 
                 if eight_points is not None:
-                    cv2.polylines(detections, [eight_points], 1, (255, 0, 0), 2)
+                    cv2.polylines(debug_frame, [eight_points], 1, (255, 0, 0), 2)
                 else:
-                    cv2.polylines(detections, [points], 1, (255, 0, 0), 2)
+                    cv2.polylines(debug_frame, [points], 1, (255, 0, 0), 2)
             
                 if captureBits == True or True:
 
-                    img_grey = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
-
-                    blur = cv2.GaussianBlur(img_grey,(5,5),0)
+                    blur = cv2.GaussianBlur(cropped,(5,5),0)
                     ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
                     th3 = captureBitsFromImage(th3, width, height, rows, cols)
@@ -194,10 +205,11 @@ def run_opencv():
             "adaptiveThreshWinSizeStep": adaptiveThreshWinSizeStep,
             "adaptiveThreshConstant": adaptiveThreshConstant
         }
-        debugValue(params, frame)
+        debugValue(params, debug_frame)
 
         # Display the resulting frame
-        cv2.imshow('preview', frame)
+        cv2.imshow('debug', debug_frame)
+        cv2.imshow('cropped', cropped)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         
