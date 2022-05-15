@@ -241,6 +241,7 @@ def run_opencv():
         #th3 = cv2.threshold(img_grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         # Display the resulting frame
         cv2.imshow('preview', adjusted)
+        #cv2.waitKey(0)
         #cv2.imshow('cropped', th3)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -292,8 +293,8 @@ def sendData (textSound):
     except socketio.exceptions.BadNamespaceError as err:
         print("error sending data", err)
 
-thread = threading.Thread(target=keyboard_listen)
-thread.start()
+# thread = threading.Thread(target=keyboard_listen)
+#thread.start()
 #thread.join()
 
 run_opencv()
