@@ -1,6 +1,11 @@
 from flask import Flask, render_template, Response
+from flask_socketio import SocketIO, send, emit
 import cv2
-app = Flask(__name__)
+
+app = Flask(__name__, static_url_path='', static_folder='static', template_folder='templates')
+
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)
 
 video_output = None
 
@@ -32,3 +37,15 @@ def video_feed():
 def index():
     """Video streaming home page."""
     return render_template('index.html')
+
+@socketio.on('connect')
+def test_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def test_disconnect():
+    print('Client disconnected')
+
+@socketio.on('detection_data')
+def sendDetectionData(data):
+    emit('detection_data', data, broadcast=True)

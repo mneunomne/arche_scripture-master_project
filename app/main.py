@@ -9,21 +9,25 @@ import cv2.aruco as aruco
 import numpy as np
 import math
 from dotenv import load_dotenv
-from socket_connection import connectSocket, sendData, is_connected
+# from socket_connection import connectSocket, sendData, is_connected
 from utils import *
 import threading
-from flask_server import app, sendVideoOutput
+from flask_server import app, sendVideoOutput, socketio
 
 # load .env file
 load_dotenv()
 
-thread = threading.Thread(target=app.run)
+def run_flask():
+    # app.run()
+    socketio.run(app)
+
+thread = threading.Thread(target=run_flask)
 thread.start()
 
 DEVICE = int(os.environ.get("WEBCAM"))
 SOCKET_SERVER_URL = os.environ.get("SOCKET_SERVER_URL")
 
-connectSocket(SOCKET_SERVER_URL)
+# connectSocket(SOCKET_SERVER_URL)
 
 # default values
 
@@ -270,9 +274,7 @@ def captureBitsFromImage(img, width, height, rows, cols):
     print(data_y, data_x)
     numbers = bits2numbers(bin_array)
     textSound = numbers2text(numbers) 
-    print(textSound)
-    if is_connected:
-        sendData(textSound)
-
+    print("send text data!")
+    socketio.emit('detection_data', {'text': textSound})
 
 run_opencv()
