@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from utils import *
 import threading
 from flask_server import app, sendVideoOutput, socketio
-
+from kiosk import run_kiosk
 # load .env file
 load_dotenv()
 
@@ -21,8 +21,14 @@ def run_flask():
     # app.run()
     socketio.run(app)
 
-thread = threading.Thread(target=run_flask)
-thread.start()
+def launch_kiosk():
+    run_kiosk("http://127.0.0.1:5000/")
+
+thread_flask = threading.Thread(target=run_flask)
+thread_flask.start()
+
+# thread_kiosk = threading.Thread(target=launch_kiosk)
+# thread_kiosk.start()
 
 DEVICE = int(os.environ.get("WEBCAM"))
 SOCKET_SERVER_URL = os.environ.get("SOCKET_SERVER_URL")
