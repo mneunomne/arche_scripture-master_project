@@ -11,9 +11,14 @@ import math
 from dotenv import load_dotenv
 from socket_connection import connectSocket, sendData, is_connected
 from utils import *
+import threading
+from flask_server import app, sendVideoOutput
 
 # load .env file
 load_dotenv()
+
+thread = threading.Thread(target=app.run)
+thread.start()
 
 DEVICE = int(os.environ.get("WEBCAM"))
 SOCKET_SERVER_URL = os.environ.get("SOCKET_SERVER_URL")
@@ -31,11 +36,12 @@ bin_threshold=100
 captureBits=False
 default_alpha = 1  # Contrast control (1.0-3.0)
 beta = 0  # Brightness control (0-100)
-
+plate_id = None
 rows=220
 cols=200
 width=297*5
 height=420*5
+video_output=None
 
 def nothing(a):
     return None
@@ -62,6 +68,7 @@ def run_opencv():
     global adaptiveThreshWinSizeStep
     global adaptiveThreshConstant
     global margin
+    global video_output
 
     cap = cv2.VideoCapture(DEVICE)
 
@@ -212,6 +219,10 @@ def run_opencv():
             "plate_id": plate_id
         }
         debugValue(params, debug_frame)
+        
+        # video output for flask
+        video_output = debug_frame.copy()
+        sendVideoOutput(video_output)
 
         # Display the resulting frame
         cv2.imshow('debug', debug_frame)
@@ -262,5 +273,6 @@ def captureBitsFromImage(img, width, height, rows, cols):
     print(textSound)
     if is_connected:
         sendData(textSound)
+
 
 run_opencv()
