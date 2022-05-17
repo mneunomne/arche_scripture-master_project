@@ -1,10 +1,17 @@
 body {
   margin: 0;
 }
+
 .box {
   position: absolute;
+  transition: opacity 0.1s;
 }
-#waveform {
+
+.box.hidden {
+  opacity: 0;
+}
+
+#waveform0, #waveform1 {
   width: 70%;
   height: 300px;
   z-index: 9999999;
@@ -18,12 +25,14 @@ body {
   font-size: 6px;
   overflow: hidden;
 }
+
 #video {
   position: absolute;
   transform-origin: calc(100vw/2);
   transform: rotate(90deg);
   width: 100vh;
   height: 100vw;
+  background: beige;
 }
 
 #cropped {
@@ -32,4 +41,5 @@ body {
   height: 420px;
   top: 75%;
   position: absolute;
+  background: white;
 }

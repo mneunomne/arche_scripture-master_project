@@ -4,7 +4,7 @@ import cv2
 
 from kiosk import run_kiosk
 
-app = Flask(__name__, static_url_path='', static_folder='static', template_folder='templates')
+app = Flask(__name__, static_url_path='', static_folder='static', template_folder='static')
 
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
