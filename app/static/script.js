@@ -3,10 +3,15 @@ var socket = io();
 var wavesurfer = WaveSurfer.create({
   container: '#waveform',
   waveColor: 'white',
+  progressColor: 'white',
+  cursorWidth: 2,
+  cursorColor: 'blue',
+  height: 200,
+  fillParent: true
 });
 
 const volume = 0.1 
-const loop = false
+const loop = true
 const playbackRate = 0.1
 
 const textEl = document.getElementById('text')
