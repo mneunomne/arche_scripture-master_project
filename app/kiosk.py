@@ -7,7 +7,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 def run_kiosk(path):
   options = Options()
   options.add_argument("--kiosk")
+  options.add_experimental_option("detach", True)
   driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
   driver.get(path)
-  while True:
-    pass

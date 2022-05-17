@@ -1,42 +1,26 @@
 """
 An example of detecting ArUco markers with OpenCV.
 """
+import argparse
 import os
 import cv2
-import sys
 from cv2 import threshold
 import cv2.aruco as aruco
 import numpy as np
 import math
 from dotenv import load_dotenv
-# from socket_connection import connectSocket, sendData, is_connected
 from utils import *
 import threading
 from flask_server import app, sendVideoOutput, socketio
 from kiosk import run_kiosk
+
 # load .env file
 load_dotenv()
-
-def run_flask():
-    # app.run()
-    socketio.run(app)
-
-def launch_kiosk():
-    run_kiosk("http://127.0.0.1:5000/")
-
-thread_flask = threading.Thread(target=run_flask)
-thread_flask.start()
-
-# thread_kiosk = threading.Thread(target=launch_kiosk)
-# thread_kiosk.start()
 
 DEVICE = int(os.environ.get("WEBCAM"))
 SOCKET_SERVER_URL = os.environ.get("SOCKET_SERVER_URL")
 
-# connectSocket(SOCKET_SERVER_URL)
-
 # default values
-
 adaptiveThreshWinSizeMin = 3
 adaptiveThreshWinSizeMax = 90
 adaptiveThreshWinSizeStep = 10
@@ -53,8 +37,34 @@ width=297*5
 height=420*5
 video_output=None
 
-def nothing(a):
-    return None
+# Argument parser
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--kiosk', default=False, action='store_true')
+parser.add_argument('--flask', default=False, action='store_true')
+args = parser.parse_args()
+
+kiosk_enabled = args.kiosk
+flask_enabled = args.flask
+
+print(args)
+
+def init(): 
+    def run_flask():
+        socketio.run(app)
+
+    def launch_kiosk():
+        run_kiosk("http://127.0.0.1:5000/")
+
+    if flask_enabled:
+        thread_flask = threading.Thread(target=socketio.run, args=(app,))
+        thread_flask.start()
+
+    if kiosk_enabled:
+        thread_kiosk = threading.Thread(target=run_kiosk, args=("http://127.0.0.1:5000/",))
+        thread_kiosk.start()
+    
+    # start opencv
+    run_opencv()
 
 def increase_brightness(img, value=30):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -283,4 +293,5 @@ def captureBitsFromImage(img, width, height, rows, cols):
     print("send text data!")
     socketio.emit('detection_data', {'text': textSound})
 
-run_opencv()
+# run!
+init()

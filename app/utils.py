@@ -46,3 +46,5 @@ def getCornersFromIds(corner_ids, ids, markers_pos):
 def dist(x1,y1,x2,y2):
   return ((x2-x1)**2 + (y2-y1)**2)**0.5
   
+def nothing(a):
+    return None
