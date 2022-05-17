@@ -20,9 +20,13 @@ const text2Audio = function (text, loop) {
   wav.fromScratch(1, default_sample_rate, default_bits, samples);
   let wavDataURI = wav.toDataURI();
   console.log("wavDataURI", wavDataURI)
-  source.src = wavDataURI;
-  audio.load();
-  audio.loop = false;
-  audio.playbackRate = 0.1
-  audio.play();
+  /*
+    source.src = wavDataURI;
+    audio.load();
+    audio.volume = volume
+    audio.loop = false;
+    audio.playbackRate = 0.1
+    audio.play();
+  */
+  return wavDataURI
 }

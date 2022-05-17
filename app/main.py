@@ -17,8 +17,14 @@ from kiosk import run_kiosk
 # load .env file
 load_dotenv()
 
+# webcam device
 DEVICE = int(os.environ.get("WEBCAM"))
-SOCKET_SERVER_URL = os.environ.get("SOCKET_SERVER_URL")
+
+# flask server settings
+FLASK_SERVER_IP = os.environ.get("FLASK_SERVER_IP")
+FLASK_SERVER_PORT = os.environ.get("FLASK_SERVER_PORT")
+
+server_url = "http://{}:{}/".format(FLASK_SERVER_IP, FLASK_SERVER_PORT)
 
 # default values
 adaptiveThreshWinSizeMin = 3
@@ -41,12 +47,12 @@ video_output=None
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--kiosk', default=False, action='store_true')
 parser.add_argument('--flask', default=False, action='store_true')
+parser.add_argument('--debug', default=False, action='store_true')
 args = parser.parse_args()
 
 kiosk_enabled = args.kiosk
 flask_enabled = args.flask
-
-print(args)
+debug = args.flask
 
 def init(): 
     def run_flask():
@@ -56,11 +62,11 @@ def init():
         run_kiosk("http://127.0.0.1:5000/")
 
     if flask_enabled:
-        thread_flask = threading.Thread(target=socketio.run, args=(app,))
+        thread_flask = threading.Thread(target=socketio.run, args=(app, FLASK_SERVER_IP, FLASK_SERVER_PORT,))
         thread_flask.start()
 
     if kiosk_enabled:
-        thread_kiosk = threading.Thread(target=run_kiosk, args=("http://127.0.0.1:5000/",))
+        thread_kiosk = threading.Thread(target=run_kiosk, args=(server_url,))
         thread_kiosk.start()
     
     # start opencv
@@ -270,14 +276,14 @@ def captureBitsFromImage(img, width, height, rows, cols):
     interval = (width-margin*2)/(cols)
     array_x = np.arange(margin+interval/2, width-margin, interval)
     array_y = np.arange(margin+interval/2, height-margin, interval)
-    print("len", len(array_x))
+    # print("len", len(array_x))
     bin_array = [] 
     data_y = 0
     for pos_y in array_y:
         data_x=0
         for pos_x in array_x:
             k = img[math.floor(pos_y), math.floor(pos_x)]
-            #cv2.circle(img, [int(pos_x), int(pos_y)], 1, (255, 0, 255), 1)
+            cv2.circle(img, [int(pos_x), int(pos_y)], 1, (255, 0, 255), 1)
             bin = '1' if k < bin_threshold else '0'
             bin_array.append(bin)
             #data_image[data_y, data_x]=k
@@ -287,10 +293,10 @@ def captureBitsFromImage(img, width, height, rows, cols):
             data_image = cv2.rectangle(data_image, start_point, end_point, (color), -1)
             data_x+=1
         data_y+=1
-    print(data_y, data_x)
+    # print(data_y, data_x)
     numbers = bits2numbers(bin_array)
     textSound = numbers2text(numbers) 
-    print("send text data!")
+    # print("send text data!", textSound)
     socketio.emit('detection_data', {'text': textSound})
 
 # run!
