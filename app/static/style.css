@@ -5,11 +5,11 @@ body {
   position: absolute;
 }
 #waveform {
-  width: 800px;
+  width: 70%;
   height: 300px;
   z-index: 9999999;
   top: 100px;
-  left: 540px;
+  left: 50%;
   transform: translateX(-50%);
   filter: drop-shadow(4px 2px 6px black);
 }
@@ -19,6 +19,17 @@ body {
   overflow: hidden;
 }
 #video {
-  transform-origin: 540px;
+  position: absolute;
+  transform-origin: calc(100vw/2);
   transform: rotate(90deg);
+  width: 100vh;
+  height: 100vw;
+}
+
+#cropped {
+  left: 177px;
+  width: 297px;
+  height: 420px;
+  top: 75%;
+  position: absolute;
 }

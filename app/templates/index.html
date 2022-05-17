@@ -19,7 +19,10 @@
     <div class="box" id="text"></div>
     <div class="row">
       <div class="col-lg-8  offset-lg-2">
-        <img id="video" src="{{ url_for('video_feed') }}" width="1920px" height="1080">
+        <img id="video" src="{{ url_for('video_feed') }}" width="1920" height="1080">
+      </div>
+      <div class="col-lg-8  offset-lg-2">
+        <img id="cropped" src="{{ url_for('cropped_feed') }}" width="594" height="840">
       </div>
     </div>
   </div>

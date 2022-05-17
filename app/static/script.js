@@ -32,7 +32,11 @@ const addEvents = function () {
 }
 
 const onDetectionData = function (data) {
-  console.log("detection_data!", data)
+  console.log("detection_data!", data, wavesurfer.isPlaying())
+  if (wavesurfer.isPlaying()) {
+    console.log("already playing")
+    return
+  }
   let {text} = data
   let wavDataURI = text2Audio(text, false, 0.1)
   wavesurfer.load(wavDataURI)
@@ -40,7 +44,8 @@ const onDetectionData = function (data) {
 }
 
 const onAudioReady = function () {
-  wavesurfer.playbackRate = playbackRate
+  console.log("onAudioReady!", wavesurfer)
+  wavesurfer.setPlaybackRate(playbackRate)
   wavesurfer.volume = volume
   wavesurfer.loop = loop
   wavesurfer.play();

@@ -11,7 +11,7 @@ import math
 from dotenv import load_dotenv
 from utils import *
 import threading
-from flask_server import app, sendVideoOutput, socketio
+from flask_server import app, sendVideoOutput, sendCroppedOutput, socketio
 from kiosk import run_kiosk
 from socket_connection import connectSocket
 # load .env file
@@ -30,7 +30,7 @@ server_url = "http://{}:{}/".format(FLASK_SERVER_IP, FLASK_SERVER_PORT)
 # default values
 adaptiveThreshWinSizeMin = 3
 adaptiveThreshWinSizeMax = 90
-adaptiveThreshWinSizeStep = 10
+adaptiveThreshWinSizeStep = 5
 adaptiveThreshConstant = 2
 margin=45
 bin_threshold=100
@@ -268,6 +268,9 @@ def run_opencv():
             video_output = frame.copy()
         # send video to flask
         sendVideoOutput(video_output)
+
+        # send cropped video to flask
+        sendCroppedOutput(cropped)
 
         # Display the resulting frame
         cv2.imshow('debug', debug_frame)
