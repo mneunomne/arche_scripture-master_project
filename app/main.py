@@ -13,7 +13,7 @@ from utils import *
 import threading
 from flask_server import app, sendVideoOutput, socketio
 from kiosk import run_kiosk
-
+from socket_connection import connectSocket
 # load .env file
 load_dotenv()
 
@@ -43,7 +43,6 @@ cols=200
 width=297*5
 height=420*5
 video_output=None
-scale=2
 
 # Argument parser
 parser = argparse.ArgumentParser(description='Process some integers.')
@@ -51,13 +50,15 @@ parser.add_argument('-k', '--kiosk', default=False, action='store_true')
 parser.add_argument('-f', '--flask', default=False, action='store_true')
 parser.add_argument('-d', '--debug', default=False, action='store_true')
 parser.add_argument('-o', '--output', type=str, default="default")
+parser.add_argument('-s', '--scale', type=int, default=1)
 args = parser.parse_args()
-print(args)
-# switches
+
+# arg variables
 kiosk_enabled = args.kiosk
 flask_enabled = args.flask
 debug = args.flask
 flask_output = args.output
+scale = args.scale
 
 def init(): 
     # start flask thread
@@ -69,6 +70,8 @@ def init():
     if kiosk_enabled:
         thread_kiosk = threading.Thread(target=run_kiosk, args=(server_url,))
         thread_kiosk.start()
+    
+    # connectSocket(server_url)
     
     # start opencv
     run_opencv()
