@@ -24,6 +24,7 @@ DEVICE = int(os.environ.get("WEBCAM"))
 FLASK_SERVER_IP = os.environ.get("FLASK_SERVER_IP")
 FLASK_SERVER_PORT = os.environ.get("FLASK_SERVER_PORT")
 
+# full server url for connection to the socket
 server_url = "http://{}:{}/".format(FLASK_SERVER_IP, FLASK_SERVER_PORT)
 
 # default values
@@ -42,29 +43,29 @@ cols=200
 width=297*5
 height=420*5
 video_output=None
+scale=2
 
 # Argument parser
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--kiosk', default=False, action='store_true')
-parser.add_argument('--flask', default=False, action='store_true')
-parser.add_argument('--debug', default=False, action='store_true')
+parser.add_argument('-k', '--kiosk', default=False, action='store_true')
+parser.add_argument('-f', '--flask', default=False, action='store_true')
+parser.add_argument('-d', '--debug', default=False, action='store_true')
+parser.add_argument('-o', '--output', type=str, default="default")
 args = parser.parse_args()
-
+print(args)
+# switches
 kiosk_enabled = args.kiosk
 flask_enabled = args.flask
 debug = args.flask
+flask_output = args.output
 
 def init(): 
-    def run_flask():
-        socketio.run(app)
-
-    def launch_kiosk():
-        run_kiosk("http://127.0.0.1:5000/")
-
+    # start flask thread
     if flask_enabled:
         thread_flask = threading.Thread(target=socketio.run, args=(app, FLASK_SERVER_IP, FLASK_SERVER_PORT,))
         thread_flask.start()
 
+    # start kiosk thread 
     if kiosk_enabled:
         thread_kiosk = threading.Thread(target=run_kiosk, args=(server_url,))
         thread_kiosk.start()
@@ -96,6 +97,7 @@ def run_opencv():
     global margin
     global video_output
 
+    # caputure webcam feed
     cap = cv2.VideoCapture(DEVICE)
 
     # create window
@@ -104,11 +106,13 @@ def run_opencv():
     cv2.namedWindow("cropped")
     cv2.namedWindow("data")
 
+    # GUI elements of image processing
     cv2.createTrackbar('brightness','debug',0,255,nothing)
     cv2.createTrackbar('alpha','debug',default_alpha*10,100,nothing)
     cv2.createTrackbar('beta','debug',0,255,nothing)
     cv2.createTrackbar('margin','debug',margin,100,nothing)
-    # fiducial values
+
+    # GUI elements for fiducial tracking values
     cv2.createTrackbar('adaptiveThreshWinSizeMin', 'debug', adaptiveThreshWinSizeMin, 100, nothing)
     cv2.createTrackbar('adaptiveThreshWinSizeMax', 'debug', adaptiveThreshWinSizeMax, 100, nothing)
     cv2.createTrackbar('adaptiveThreshWinSizeStep', 'debug', adaptiveThreshWinSizeStep, 100, nothing)
@@ -135,6 +139,9 @@ def run_opencv():
 
         # image used for interpretation
         reading_frame = frame.copy()
+        output_frame = frame.copy()
+
+        output_frame = cv2.resize(output_frame, (1920*scale, 1080*scale))
 
         # only use red channel
         reading_frame[:, :, 0] = np.zeros([reading_frame.shape[0], reading_frame.shape[1]])
@@ -164,6 +171,7 @@ def run_opencv():
         markers_pos, ids, _ = aruco.detectMarkers(reading_frame, aruco_dict, parameters=parameters)
         # draw detected markers on the captured image
         debug_frame = aruco.drawDetectedMarkers(debug_frame, markers_pos, ids)
+        output_frame = aruco.drawDetectedMarkers(output_frame, np.array(markers_pos)*scale, ids)
 
         if ids is not None:
             # order of fiducial id's
@@ -212,8 +220,10 @@ def run_opencv():
 
                 if eight_points is not None:
                     cv2.polylines(debug_frame, [eight_points], 1, (255, 0, 0), 2)
+                    cv2.polylines(output_frame, [eight_points], 1, (255, 0, 0), 2)
                 else:
                     cv2.polylines(debug_frame, [points], 1, (255, 0, 0), 2)
+                    cv2.polylines(output_frame, [points], 1, (255, 0, 0), 2)
             
                 if captureBits == True or True:
 
@@ -246,8 +256,14 @@ def run_opencv():
         }
         debugValue(params, debug_frame)
         
-        # video output for flask
-        video_output = debug_frame.copy()
+        # pick vidoe output based on args
+        if flask_output == 'default':
+            video_output = output_frame.copy()
+        elif flask_output == 'debug':
+            video_output = debug_frame.copy()
+        elif flask_output == 'raw':
+            video_output = frame.copy()
+        # send video to flask
         sendVideoOutput(video_output)
 
         # Display the resulting frame
