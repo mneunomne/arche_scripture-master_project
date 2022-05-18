@@ -1,6 +1,6 @@
 var socket = io();
 
-const test = false
+const test = true
 
 var wavesurfer0 = WaveSurfer.create({
   container: '#waveform0',

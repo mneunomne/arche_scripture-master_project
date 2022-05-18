@@ -36,6 +36,7 @@ body {
 }
 
 #cropped {
+  opacity: 0;
   left: 177px;
   width: 297px;
   height: 420px;
