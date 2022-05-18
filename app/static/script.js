@@ -1,5 +1,7 @@
 var socket = io();
 
+const test = false
+
 var wavesurfer0 = WaveSurfer.create({
   container: '#waveform0',
   waveColor: 'white',
@@ -86,8 +88,6 @@ const onAudioReady = function () {
   cur_wavesurfer.loop = loop
   cur_wavesurfer.play();
 }
-
-let test = true
 
 const run_test = () => {
   onDetectionData({"text": test_text})
