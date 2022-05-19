@@ -4,6 +4,7 @@ const params = new URLSearchParams(window.location.search)
 
 const test = params.has('test') || false
 const fake_audio = params.has('fake_audio') || false
+const random_speed = params.has('random_speed') || false
 
 var wavesurfer0 = WaveSurfer.create({
   container: '#waveform0',
@@ -95,7 +96,11 @@ const onDetectionData = function (data) {
 
 const onAudioReady = function () {
   console.log("onAudioReady!", cur_wavesurfer)
-  cur_wavesurfer.setPlaybackRate(playbackRate)
+  if (random_speed) {
+    cur_wavesurfer.setPlaybackRate(Math.random())
+  } else {
+    cur_wavesurfer.setPlaybackRate(playbackRate)
+  }
   cur_wavesurfer.volume = volume
   cur_wavesurfer.loop = loop
   cur_wavesurfer.play();
@@ -128,6 +133,11 @@ const load_json = function () {
 fetchJSONFile('745.json', function(data){
     let textData = data.positions.map(p => p.char).join('');
     onDetectionData({"text": textData})
+    setInterval(() => {
+      onDetectionData({"text": textData})
+      wavesurfer0.setCursorColor('transparent')
+      wavesurfer1.setCursorColor('transparent')
+    }, 10000)
   });
 }
 
