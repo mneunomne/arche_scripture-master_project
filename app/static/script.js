@@ -3,6 +3,7 @@ var socket = io();
 const params = new URLSearchParams(window.location.search)
 
 const test = params.has('test') || false
+const fake_audio = params.has('fake_audio') || false
 
 var wavesurfer0 = WaveSurfer.create({
   container: '#waveform0',
@@ -38,7 +39,7 @@ const el_waveform1 = document.getElementById("waveform1")
 
 const init = function () {
   addEvents()
-  
+  if (fake_audio) load_json()
   if (test) run_test()
 }
 
@@ -105,6 +106,29 @@ const run_test = () => {
   setInterval(() => {
     onDetectionData({"text": test_text})
   }, 5000)
+}
+
+const load_json = function () {
+  function fetchJSONFile(path, callback) {
+    var httpRequest = new XMLHttpRequest();
+    httpRequest.onreadystatechange = function() {
+        if (httpRequest.readyState === 4) {
+            if (httpRequest.status === 200) {
+                var data = JSON.parse(httpRequest.responseText);
+                if (callback) callback(data);
+            }
+        }
+    };
+    httpRequest.open('GET', path);
+    httpRequest.send(); 
+}
+
+// this requests the file and executes a callback with the parsed result once
+//   it is available
+fetchJSONFile('745.json', function(data){
+    let textData = data.positions.map(p => p.char).join('');
+    onDetectionData({"text": textData})
+  });
 }
 
 init()

@@ -52,6 +52,7 @@ parser.add_argument('-d', '--debug', default=False, action='store_true')
 parser.add_argument('-o', '--output', type=str, default="default")
 parser.add_argument('-s', '--scale', type=int, default=1)
 parser.add_argument('-t', '--test', default=False, action='store_true')
+parser.add_argument('-fa', '--fake_audio', default=False, action='store_true')
 args = parser.parse_args()
 
 # arg variables
@@ -60,10 +61,11 @@ flask_enabled = args.flask
 debug = args.flask
 flask_output = args.output
 scale = args.scale
+fake_audio = args.fake_audio
 
 test = args.test
-if test == True:
-    server_url = server_url + '?test=true'
+if test == True: server_url = server_url + '?test=true'
+if fake_audio == True: server_url = server_url + '?fake_audio=true'
 
 def init(): 
     # start flask thread
