@@ -66,9 +66,10 @@ fake_audio = args.fake_audio
 random_speed = args.random_speed
 
 test = args.test
-if test == True: server_url = server_url + '?test=true'
-if fake_audio == True: server_url = server_url + '?fake_audio=true'
-if random_speed == True: server_url = server_url + '?random_speed=true'
+if test or fake_audio or random_speed: server_url = server_url + '?' 
+if test == True: server_url = server_url + '&test=true'
+if fake_audio == True: server_url = server_url + '&fake_audio=true'
+if random_speed == True: server_url = server_url + '&random_speed=true'
 
 def init(): 
     # start flask thread

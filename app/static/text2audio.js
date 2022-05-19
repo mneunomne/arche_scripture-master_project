@@ -30,3 +30,20 @@ const text2Audio = function (text, loop) {
   */
   return wavDataURI
 }
+
+const samples2audio = function (samples) {
+  var wav = new wavefile.WaveFile();
+  // Create a WaveFile using the samples
+  wav.fromScratch(1, default_sample_rate, default_bits, samples);
+  let wavDataURI = wav.toDataURI();
+  console.log("wavDataURI fake", wavDataURI)
+  return wavDataURI
+}
+
+const numbers2Text = function (numbers) {
+  return numbers.map(n => alphabet[n]).join('')
+}
+
+const text2numbers = function (text) {
+  return text.split("").map(c => alphabet.indexOf(c))
+}

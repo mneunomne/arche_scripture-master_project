@@ -6,6 +6,10 @@ const test = params.has('test') || false
 const fake_audio = params.has('fake_audio') || false
 const random_speed = params.has('random_speed') || false
 
+console.log("fake_audio", fake_audio)
+
+var fakeAudioData = null 
+
 var wavesurfer0 = WaveSurfer.create({
   container: '#waveform0',
   waveColor: 'white',
@@ -26,6 +30,9 @@ var wavesurfer1 = WaveSurfer.create({
   fillParent: true
 });
 
+wavesurfer0.setCursorColor('transparent')
+wavesurfer1.setCursorColor('transparent')
+
 var last_wavesurfer_index = null
 var cur_wavesurfer = null 
 
@@ -40,8 +47,12 @@ const el_waveform1 = document.getElementById("waveform1")
 
 const init = function () {
   addEvents()
-  if (fake_audio) load_json()
-  if (test) run_test()
+  fetchJSONFile('745.json', function(data){
+    let textData = data.positions.map(p => p.char).join('');
+    fakeAudioData = text2numbers(textData)
+    console.log("fakeAudioData", fakeAudioData)
+    if (test) run_test()
+  });
 }
 
 const addEvents = function () {
@@ -54,6 +65,9 @@ const addEvents = function () {
 
   wavesurfer0.on('ready', onAudioReady);
   wavesurfer1.on('ready', onAudioReady);
+
+  wavesurfer0.on('finish', onAudioEnd);
+  wavesurfer1.on('finish', onAudioEnd);
 
   /*
   on any interaction
@@ -89,21 +103,66 @@ const onDetectionData = function (data) {
   }
 
   let {text} = data
-  let wavDataURI = text2Audio(text, false, 0.1)
+  let wavDataURI = null
+  
+  if (fake_audio) {
+    wavDataURI= interpolateDataWithFakeAudio(text)
+  } else {
+    wavDataURI= text2Audio(text, false, 0.1)
+  }
+  
   cur_wavesurfer.load(wavDataURI)
   textEl.innerText=text
+}
+
+// returns waveDataURI
+const interpolateDataWithFakeAudio = function (text) {
+  let samples = text2numbers(text)
+  console.log("samples.length > fakeAudioData.length", samples.length , fakeAudioData.length, samples.length-fakeAudioData.length)
+  if (samples.length > fakeAudioData.length) {
+    samples.splice(fakeAudioData.length, samples.length-fakeAudioData.length);
+  } else {
+    samples.splice(fakeAudioData.length, fakeAudioData.length-samples.length);
+  }
+  
+  console.log("samples.length > fakeAudioData.length", samples.length , fakeAudioData.length, samples.length-fakeAudioData.length)
+
+  let noiseScale = Math.random()
+  let nd = 1/1000
+  let noiseData = text.split("").map((d, i) => {
+    return Math.min((1 + noise.perlin2(parseFloat(i)*nd,Math.random()*1000+parseFloat(i)*nd)/2)*noiseScale, 1)
+  })
+
+  console.log("noiseData", noiseData)
+
+  samples = samples.map((n, i) => {
+    let noise = noiseData[i]
+    let fakeAudioNumber = parseFloat(fakeAudioData[i])
+    // console.log("fakeAudioNumber", fakeAudioNumber)
+    let newNumber = fakeAudioNumber*noise + n*(1-noise)
+    return Math.floor(newNumber)
+  })
+
+  return samples2audio(samples)
 }
 
 const onAudioReady = function () {
   console.log("onAudioReady!", cur_wavesurfer)
   if (random_speed) {
-    cur_wavesurfer.setPlaybackRate(Math.random())
+    cur_wavesurfer.setPlaybackRate(0.1+Math.random()*0.8)
   } else {
     cur_wavesurfer.setPlaybackRate(playbackRate)
   }
   cur_wavesurfer.volume = volume
   cur_wavesurfer.loop = loop
   cur_wavesurfer.play();
+
+  cur_wavesurfer.setCursorColor('blue')
+}
+
+const onAudioEnd = function () {
+  wavesurfer0.setCursorColor('transparent')
+  wavesurfer1.setCursorColor('transparent')
 }
 
 const run_test = () => {
@@ -113,32 +172,21 @@ const run_test = () => {
   }, 5000)
 }
 
-const load_json = function () {
-  function fetchJSONFile(path, callback) {
-    var httpRequest = new XMLHttpRequest();
-    httpRequest.onreadystatechange = function() {
-        if (httpRequest.readyState === 4) {
-            if (httpRequest.status === 200) {
-                var data = JSON.parse(httpRequest.responseText);
-                if (callback) callback(data);
-            }
-        }
-    };
-    httpRequest.open('GET', path);
-    httpRequest.send(); 
+function fetchJSONFile(path, callback) {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.onreadystatechange = function() {
+      if (httpRequest.readyState === 4) {
+          if (httpRequest.status === 200) {
+              var data = JSON.parse(httpRequest.responseText);
+              if (callback) callback(data);
+          }
+      }
+  };
+  httpRequest.open('GET', path);
+  httpRequest.send(); 
 }
 
 // this requests the file and executes a callback with the parsed result once
 //   it is available
-fetchJSONFile('745.json', function(data){
-    let textData = data.positions.map(p => p.char).join('');
-    onDetectionData({"text": textData})
-    setInterval(() => {
-      onDetectionData({"text": textData})
-      wavesurfer0.setCursorColor('transparent')
-      wavesurfer1.setCursorColor('transparent')
-    }, 10000)
-  });
-}
 
 init()
