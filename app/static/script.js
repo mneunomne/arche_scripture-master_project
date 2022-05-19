@@ -1,6 +1,8 @@
 var socket = io();
 
-const test = true
+const params = new URLSearchParams(window.location.search)
+
+const test = params.has('test') || false
 
 var wavesurfer0 = WaveSurfer.create({
   container: '#waveform0',
@@ -50,6 +52,15 @@ const addEvents = function () {
 
   wavesurfer0.on('ready', onAudioReady);
   wavesurfer1.on('ready', onAudioReady);
+
+  /*
+  on any interaction
+  document.body.addEventListener('mousemove', handleInteraction);
+  document.body.addEventListener('scroll', handleInteraction);
+  document.body.addEventListener('keydown', handleInteraction);
+  document.body.addEventListener('click', handleInteraction);
+  document.body.addEventListener('touchstart', handleInteraction);
+  */
 }
 
 const onDetectionData = function (data) {

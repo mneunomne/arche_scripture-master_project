@@ -51,6 +51,7 @@ parser.add_argument('-f', '--flask', default=False, action='store_true')
 parser.add_argument('-d', '--debug', default=False, action='store_true')
 parser.add_argument('-o', '--output', type=str, default="default")
 parser.add_argument('-s', '--scale', type=int, default=1)
+parser.add_argument('-t', '--test', default=False, action='store_true')
 args = parser.parse_args()
 
 # arg variables
@@ -59,6 +60,10 @@ flask_enabled = args.flask
 debug = args.flask
 flask_output = args.output
 scale = args.scale
+
+test = args.test
+if test == True:
+    server_url = server_url + '?test=true'
 
 def init(): 
     # start flask thread
