@@ -5,7 +5,9 @@ const params = new URLSearchParams(window.location.search)
 const reloaded = params.has('reloaded') || false
 
 if (!reloaded) {
-  window.location.href = window.location.href + "&reloaded=true"
+  setTimeout(() => {
+    window.location.href = window.location.href + "&reloaded=true"
+  }, 500)
 }
 
 const test = params.has('test') || false
