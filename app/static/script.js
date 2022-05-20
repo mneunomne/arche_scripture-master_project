@@ -154,7 +154,7 @@ const interpolateDataWithFakeAudio = function (text) {
   
   console.log("samples.length > fakeAudioData.length", samples.length , fakeAudioData.length, samples.length-fakeAudioData.length)
 
-  noiseScale = Math.random()
+  noiseScale = 0.1+Math.random()*0.9
   let nd = 1/1000
   let noiseData = text.split("").map((d, i) => {
     return Math.min((1 + noise.perlin2(parseFloat(i)*nd,Math.random()*1000+parseFloat(i)*nd)/2)*noiseScale, 1)
@@ -175,7 +175,7 @@ const onAudioReady = function () {
   console.log("onAudioReady!", cur_wavesurfer)
   if (random_speed) {
     if (fake_audio) {
-      curPlaybackRate = (0.1+Math.random()*0.9)*noiseScale
+      curPlaybackRate = (0.15+Math.random()*0.85)*noiseScale
     } else {
       curPlaybackRate = 0.1+Math.random()*0.8
     }
