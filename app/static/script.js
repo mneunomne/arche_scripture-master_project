@@ -2,6 +2,12 @@ var socket = io();
 
 const params = new URLSearchParams(window.location.search)
 
+const reloaded = params.has('reloaded') || false
+
+if (!reloaded) {
+  window.location.href = window.location.href + "&reloaded=true"
+}
+
 const test = params.has('test') || false
 const fake_audio = params.has('fake_audio') || false
 const random_speed = params.has('random_speed') || false
