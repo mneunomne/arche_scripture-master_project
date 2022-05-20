@@ -8,6 +8,10 @@ const random_speed = params.has('random_speed') || false
 
 const sample_rate = 8000
 
+const d = new Date();
+
+var lastTimePlayed = 0
+
 var barEl = document.querySelector(".bar")
 
 var fakeAudioData = null 
@@ -38,12 +42,20 @@ wavesurfer1.setCursorColor('transparent')
 var last_wavesurfer_index = null
 var cur_wavesurfer = null 
 
+var noiseScale = null
+
 const volume = 0.1 
 const loop = true
 const playbackRate = 0.1
 var curPlaybackRate = playbackRate
 
 const textEl = document.getElementById('text')
+
+var $sample_rate = document.querySelector('#sample_rate span')
+var $lastTimePlayed = document.querySelector('#lastTimePlayed span')
+var $curPlaybackRate = document.querySelector('#curPlaybackRate span')
+var $cur_length = document.querySelector('#cur_length span')
+var $noiseScale = document.querySelector('#noiseScale span')
 
 const el_waveform0 = document.getElementById("waveform0")
 const el_waveform1 = document.getElementById("waveform1")
@@ -88,7 +100,7 @@ const onDetectionData = function (data) {
   console.log("detection_data!", data)
 
   // if its still playing, ignore...
-  if (wavesurfer0.isPlaying() || wavesurfer1.isPlaying()) {
+  if (Date.now() - lastTimePlayed < 2000 || wavesurfer0.isPlaying() || wavesurfer1.isPlaying()) {
     console.log("already playing!")
     return
   }
@@ -134,7 +146,7 @@ const interpolateDataWithFakeAudio = function (text) {
   
   console.log("samples.length > fakeAudioData.length", samples.length , fakeAudioData.length, samples.length-fakeAudioData.length)
 
-  let noiseScale = Math.random()
+  noiseScale = Math.random()
   let nd = 1/1000
   let noiseData = text.split("").map((d, i) => {
     return Math.min((1 + noise.perlin2(parseFloat(i)*nd,Math.random()*1000+parseFloat(i)*nd)/2)*noiseScale, 1)
@@ -154,30 +166,51 @@ const interpolateDataWithFakeAudio = function (text) {
 const onAudioReady = function () {
   console.log("onAudioReady!", cur_wavesurfer)
   if (random_speed) {
-    curPlaybackRate = 0.1+Math.random()*0.8
+    if (fake_audio) {
+      curPlaybackRate = (0.1+Math.random()*0.9)*noiseScale
+    } else {
+      curPlaybackRate = 0.1+Math.random()*0.8
+    }
+    console.log(curPlaybackRate, noiseScale)
   } else {
     curPlaybackRate = playbackRate
   }
 
-  movePlaybackBar();
-
+  updateLogs()
+  
   cur_wavesurfer.setPlaybackRate(curPlaybackRate)
   cur_wavesurfer.volume = volume
   cur_wavesurfer.loop = loop
   cur_wavesurfer.play();
+  movePlaybackBar(cur_wavesurfer.getDuration());
   cur_wavesurfer.setCursorColor('blue')
 }
 
-const movePlaybackBar = function () {
-  var seconds = (parseFloat(cur_length)/sample_rate) / curPlaybackRate
-  barEl.style.transition = `right ${seconds}s linear`
+const movePlaybackBar = function (duration) {
+  barEl.className = "bar start"
+  var seconds = duration / curPlaybackRate
+  console.log("seconds", seconds)
+  barEl.style.transition = `left ${seconds}s linear, opacity 0.4s`
   barEl.className = "bar play"
   setTimeout(() => {
+    barEl.style.transition = `opacity 0.4s`
     barEl.className = "bar hidden"
+    setTimeout(() => {
+      barEl.className = "bar hidden start"
+    }, 400)
   }, seconds * 1000)
 }
 
+const updateLogs = () => {
+  $sample_rate.textContent = " " + sample_rate;
+  $lastTimePlayed.textContent = " " + lastTimePlayed;
+  $curPlaybackRate.textContent = " " + curPlaybackRate;
+  $cur_length.textContent = " " + cur_length;
+  $noiseScale.textContent = " " + noiseScale;
+}
+
 const onAudioEnd = function () {
+  lastTimePlayed = Date.now()
   wavesurfer0.setCursorColor('transparent')
   wavesurfer1.setCursorColor('transparent')
 }

@@ -47,8 +47,9 @@ video_output=None
 # Argument parser
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('-k', '--kiosk', default=False, action='store_true')
-parser.add_argument('-f', '--flask', default=False, action='store_true')
 parser.add_argument('-d', '--debug', default=False, action='store_true')
+parser.add_argument('-l', '--logs', default=False, action='store_true')
+parser.add_argument('-f', '--flask', default=False, action='store_true')
 parser.add_argument('-o', '--output', type=str, default="default")
 parser.add_argument('-s', '--scale', type=int, default=1)
 parser.add_argument('-t', '--test', default=False, action='store_true')
@@ -57,9 +58,11 @@ parser.add_argument('-rs', '--random_speed', default=False, action='store_true')
 args = parser.parse_args()
 
 # arg variables
+
 kiosk_enabled = args.kiosk
 flask_enabled = args.flask
-debug = args.flask
+debug = args.debug
+logs = args.logs
 flask_output = args.output
 scale = args.scale
 fake_audio = args.fake_audio
@@ -70,6 +73,8 @@ if test or fake_audio or random_speed: server_url = server_url + '?'
 if test == True: server_url = server_url + '&test=true'
 if fake_audio == True: server_url = server_url + '&fake_audio=true'
 if random_speed == True: server_url = server_url + '&random_speed=true'
+if debug == True: server_url = server_url + '&debug=true'
+if logs == True: server_url = server_url + '&logs=true'
 
 def init(): 
     # start flask thread
@@ -79,7 +84,7 @@ def init():
 
     # start kiosk thread 
     if kiosk_enabled:
-        thread_kiosk = threading.Thread(target=run_kiosk, args=(server_url,))
+        thread_kiosk = threading.Thread(target=run_kiosk, args=(server_url, debug,))
         thread_kiosk.start()
     
     # connectSocket(server_url)

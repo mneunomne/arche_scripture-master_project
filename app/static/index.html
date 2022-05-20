@@ -23,6 +23,14 @@
       <div class="box hidden" id="waveform1"></div>
     </div>
     <div class="box" id="text"></div>
+    <div class="box" id="logs">
+      <p id="lastTimePlayed">lastTimePlayed:<span></span></p>
+      <p id="sample_rate">sample_rate:<span></span></p>
+      <p id="curPlaybackRate">curPlaybackRate:<span></span></p>
+      <p id="cur_length">cur_length:<span></span></p>
+      <p id="noiseScale">noiseScale:<span></span></p>
+      <p></p>
+    </div>
     <div class="row">
       <div class="col-lg-8  offset-lg-2">
         <img id="video" src="{{ url_for('video_feed') }}" width="1920" height="1080">
