@@ -4,21 +4,46 @@ body {
 
 .box {
   position: absolute;
-  transition: opacity 0.1s;
+  transition: opacity 0.4s;
 }
 
 .box.hidden {
   opacity: 0;
 }
 
-#waveform0, #waveform1 {
+.wrapper {
+  position: absolute;
   width: 70%;
-  height: 300px;
+  height: 200px;
   z-index: 9999999;
   top: 100px;
   left: 50%;
   transform: translateX(-50%);
+}
+.bar {
+  height: 100%;
+  position: absolute;
+  top: 0px;
+  border-right: solid 2px blue;
+  z-index: 999;
   filter: drop-shadow(4px 2px 6px black);
+  right: 0%;
+  transition: opacity 0.4s;
+}
+
+.bar.play {
+  right: 100%
+}
+
+.bar.hide {
+  opacity: 0;
+}
+
+#waveform0, #waveform1 {
+  filter: drop-shadow(4px 2px 6px black);
+  width: 100%;
+  position: absolute;
+  top: 0;
 }
 
 #text {

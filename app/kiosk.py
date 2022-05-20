@@ -6,7 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 def run_kiosk(path):
   options = Options()
-  options.add_argument("--kiosk")
+  # options.add_argument("--kiosk")
   options.add_argument("--autoplay-policy=no-user-gesture-required")
   options.add_experimental_option("detach", True)
   options.add_experimental_option("useAutomationExtension", False)

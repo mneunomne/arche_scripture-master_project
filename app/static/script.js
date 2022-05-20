@@ -6,7 +6,9 @@ const test = params.has('test') || false
 const fake_audio = params.has('fake_audio') || false
 const random_speed = params.has('random_speed') || false
 
-console.log("fake_audio", fake_audio)
+const sample_rate = 8000
+
+var barEl = document.querySelector(".bar")
 
 var fakeAudioData = null 
 
@@ -39,11 +41,14 @@ var cur_wavesurfer = null
 const volume = 0.1 
 const loop = true
 const playbackRate = 0.1
+var curPlaybackRate = playbackRate
 
 const textEl = document.getElementById('text')
 
 const el_waveform0 = document.getElementById("waveform0")
 const el_waveform1 = document.getElementById("waveform1")
+
+var cur_length = 0
 
 const init = function () {
   addEvents()
@@ -107,12 +112,14 @@ const onDetectionData = function (data) {
   
   if (fake_audio) {
     wavDataURI= interpolateDataWithFakeAudio(text)
+    cur_length = text.length
   } else {
     wavDataURI= text2Audio(text, false, 0.1)
+    cur_length = text.length
   }
   
   cur_wavesurfer.load(wavDataURI)
-  textEl.innerText=text
+  // textEl.innerText=text
 }
 
 // returns waveDataURI
@@ -133,8 +140,6 @@ const interpolateDataWithFakeAudio = function (text) {
     return Math.min((1 + noise.perlin2(parseFloat(i)*nd,Math.random()*1000+parseFloat(i)*nd)/2)*noiseScale, 1)
   })
 
-  console.log("noiseData", noiseData)
-
   samples = samples.map((n, i) => {
     let noise = noiseData[i]
     let fakeAudioNumber = parseFloat(fakeAudioData[i])
@@ -149,15 +154,27 @@ const interpolateDataWithFakeAudio = function (text) {
 const onAudioReady = function () {
   console.log("onAudioReady!", cur_wavesurfer)
   if (random_speed) {
-    cur_wavesurfer.setPlaybackRate(0.1+Math.random()*0.8)
+    curPlaybackRate = 0.1+Math.random()*0.8
   } else {
-    cur_wavesurfer.setPlaybackRate(playbackRate)
+    curPlaybackRate = playbackRate
   }
+
+  movePlaybackBar();
+
+  cur_wavesurfer.setPlaybackRate(curPlaybackRate)
   cur_wavesurfer.volume = volume
   cur_wavesurfer.loop = loop
   cur_wavesurfer.play();
-
   cur_wavesurfer.setCursorColor('blue')
+}
+
+const movePlaybackBar = function () {
+  var seconds = (parseFloat(cur_length)/sample_rate) / curPlaybackRate
+  barEl.style.transition = `right ${seconds}s linear`
+  barEl.className = "bar play"
+  setTimeout(() => {
+    barEl.className = "bar hidden"
+  }, seconds * 1000)
 }
 
 const onAudioEnd = function () {
