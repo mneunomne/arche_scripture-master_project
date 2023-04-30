@@ -1,4 +1,4 @@
-# Fiducial Marker Identifier
+# Arche Scriptures - Master Project Version
 
 [Reference](https://github.com/opencv/opencv_contrib/blob/4.x/modules/aruco/tutorials/aruco_detection/aruco_detection.markdown)
 
